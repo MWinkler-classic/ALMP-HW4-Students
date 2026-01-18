@@ -185,14 +185,14 @@ class Experiment:
         #      #     #######      ######   #######      #####                           #
         #                                                                               #
         #################################################################################
-        self.right_arm_meeting_cond = None # TODO 1
+        self.right_arm_meeting_conf = None # TODO 1
         self.left_arm_meeting_conf = None # TODO 1
 
         log(msg="start planning the experiment.")
         left_arm_start = self.left_arm_home
         right_arm_start = self.right_arm_home
         for i in range(len(self.cubes)):
-            left_arm_start, right_arm_start = self.plan_single_cube_passing(i, self.cubes, left_arm_start, right_arm_start,env, bb, rrt_star_planner, left_arm_start, right_arm_start)
+            left_arm_start, right_arm_start = self.plan_single_cube_passing(i, self.cubes, left_arm_start, right_arm_start,env, bb, rrt_star_planner, transform_left_arm, transform_right_arm)
 
 
         t2 = time.time()

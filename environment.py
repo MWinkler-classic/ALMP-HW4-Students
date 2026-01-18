@@ -13,7 +13,7 @@ class Environment(object):
     Environment class implements the physical robot's environment 
     '''
     def __init__(self, ur_params):
-        self.radius = 0.05
+        self.radius = 0.025
         self.ur_params = ur_params
         self.obstacles_non_np = []
         self.obstacles = None
@@ -91,12 +91,6 @@ class Environment(object):
 
         for wall in self.walls:
             if wall[5] == 0:
-                x_static_from_left_table_side = round((wall[0]) * 100, 1) - left_table_left
-                log_to_write = (f"Wall: X static on x={x_static_from_left_table_side}CM from the left side of the table,"
-                                f" rest of the wall boundaries: Y: "
-                                f"{round(wall[1] * 100, 1)}CM to {round(wall[2] * 100, 1)}CM, "
-                                f"Z: {round(wall[3] * 100, 1)} to {round(wall[4] * 100, 1)}CM.")
-                # Experiment.log(Experiment.LogType.INFO, log_to_write)
                 self.wall_x_const(0, left_table_top / 100.0, 0, wall_height,
                                   (self.arm_base_location[LocationType.LEFT][0] + self.arm_base_location[LocationType.RIGHT][0]) / 2.0, self.obstacles_non_np)
 
@@ -107,7 +101,6 @@ class Environment(object):
         return LocationType.LEFT if self.active_arm is LocationType.RIGHT else LocationType.RIGHT
 
     def update_obstacles(self, cubes, static_arm_conf):
-        self.radius = 0.025
         # cubes
         all_obstacles = [*cubes, *self.get_static_arm_spheres(self.arm_transforms[self.get_other_arm()], static_arm_conf), *self.obstacles_non_np]
         self.obstacles = np.array(all_obstacles)
@@ -123,7 +116,6 @@ class Environment(object):
         return spheres
 
     def add_box(self, x, y, z, dx, dy, dz, skip):
-        self.obstacles_non_np = [] # temp
         self.box(x=x, y=y, z=z, dx=dx, dy=dy, dz=dz, obstacles=self.obstacles_non_np, skip=skip)
 
     def sphere_num(self, min_coord, max_cord):
