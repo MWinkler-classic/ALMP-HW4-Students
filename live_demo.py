@@ -145,6 +145,7 @@ def IK():
     IK_configurations = inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool)
     valid_conf = bb_right.validate_IK_solutions(IK_configurations,transformation_matrix_base_to_tool)
     visualizer.draw_two_robots(conf_left=home_config,conf_right=valid_conf[0])
+    print("visualized IK solution:",valid_conf[0])
 
 if __name__ == '__main__':
     # draw_two_robots()
