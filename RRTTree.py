@@ -27,7 +27,7 @@ class RRTTree(object):
         vid, vdist = min(enumerate(dists), key=operator.itemgetter(1))
 
         return vid, self.vertices[vid]
-            
+
     def GetKNN(self, config, k):
         '''
         Return k-nearest neighbors
@@ -71,12 +71,11 @@ class RRTTree(object):
 
 class RRTVertex(object):
 
-    def __init__(self, state, cost=0, inspected_points=None):
+    def __init__(self, state, cost=0):
 
         self.state = state
         # self.real_state = real_state
         self.cost = cost
-        self.inspected_points = inspected_points
         self.children = set()
 
     def set_cost(self, cost):

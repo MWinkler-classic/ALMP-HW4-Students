@@ -185,7 +185,19 @@ class Experiment:
         #      #     #######      ######   #######      #####                           #
         #                                                                               #
         #################################################################################
-        self.right_arm_meeting_conf = None # TODO 1
+        left_arm = self.arm_base_location[LocationType.LEFT]
+        right_arm = self.arm_base_location[LocationType.RIGHT]
+        tool_len = inverse_kinematics.tool_length
+        right_x_bias = 0.75
+        right_y_bias = 0.25
+
+        base_meeting_coords = [((1-right_x_bias)*left_arm[0] + right_x_bias*right_arm[0]),
+                               ((1-right_y_bias)*left_arm[1] + right_y_bias*right_arm[1]),
+                               0.2] # TODO: find correct Z value using simulations
+        left_meeting_coords = base_meeting_coords + [tool_len/2, -tool_len/2, 0]
+        # right_meeting_coords =
+
+        self.right_arm_meeting_conf = None # inverse_kinematics.inverse_kinematic_solution(, ) # TODO 1
         self.left_arm_meeting_conf = None # TODO 1
 
         log(msg="start planning the experiment.")

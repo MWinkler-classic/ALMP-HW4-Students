@@ -8,7 +8,7 @@ class BuildingBlocks3D(object):
     @param p_bias determines the probability of the sample function to return the goal configuration
     """
 
-    def __init__(self, transform:Transform, ur_params:UR5e_PARAMS, env, resolution=0.1):
+    def __init__(self, transform:Transform, ur_params:UR5e_PARAMS, env, p_bias=0.05, resolution=0.1):
         self.transform = transform
         self.ur_params = ur_params
         self.env = env
