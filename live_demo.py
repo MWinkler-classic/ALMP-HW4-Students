@@ -151,8 +151,8 @@ if __name__ == '__main__':
     # draw_two_robots()
     # connect_move_robots()
     # run_json("plan_fixed.json")
-    # create_json()
+    create_json()
     # animation("plan_fixed.json")
-    IK()
+    # IK()
     
     

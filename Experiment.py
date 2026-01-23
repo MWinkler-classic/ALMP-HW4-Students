@@ -160,9 +160,12 @@ class Experiment:
         env.arm_transforms[LocationType.RIGHT] = transform_right_arm
         env.arm_transforms[LocationType.LEFT] = transform_left_arm
 
+
         bb = BuildingBlocks3D(env=env,
                              resolution=self.resolution,
-                             p_bias=self.goal_bias, )
+                             p_bias=self.goal_bias,
+                              # TODO: check if ur params and transform are right choice
+                              ur_params=ur_params_right, transform=transform_right_arm)
 
         rrt_star_planner = RRT_STAR(max_step_size=self.max_step_size,
                                     max_itr=self.max_itr,
@@ -185,8 +188,11 @@ class Experiment:
         #      #     #######      ######   #######      #####                           #
         #                                                                               #
         #################################################################################
-        left_arm = self.arm_base_location[LocationType.LEFT]
-        right_arm = self.arm_base_location[LocationType.RIGHT]
+
+        ###############################START#############################################
+
+        left_arm = env.arm_base_location[LocationType.LEFT]
+        right_arm = env.arm_base_location[LocationType.RIGHT]
         tool_len = inverse_kinematics.tool_length
         right_x_bias = 0.75
         right_y_bias = 0.25
@@ -194,11 +200,23 @@ class Experiment:
         base_meeting_coords = [((1-right_x_bias)*left_arm[0] + right_x_bias*right_arm[0]),
                                ((1-right_y_bias)*left_arm[1] + right_y_bias*right_arm[1]),
                                0.2] # TODO: find correct Z value using simulations
-        left_meeting_coords = base_meeting_coords + [tool_len/2, -tool_len/2, 0]
-        # right_meeting_coords =
+        left_meeting_coords = (np.array(base_meeting_coords) + np.array([tool_len/2, -tool_len/2, 0])).tolist()
+        right_meeting_coords = (np.array(base_meeting_coords) - np.array([tool_len/2, -tool_len/2, 0])).tolist()
+        # right_meeting_coords = base_meeting_coords + [-tool_len/2, tool_len/2, 0]
 
-        self.right_arm_meeting_conf = None # inverse_kinematics.inverse_kinematic_solution(, ) # TODO 1
-        self.left_arm_meeting_conf = None # TODO 1
+
+        left_meeting_rpy = [np.pi/2, np.pi/2, 0]  # TODO: find correct orientation using simulations
+        right_meeting_rpy = [np.pi/2, np.pi/2, 0]
+
+        transformation_matrix_base_to_tool_l = transform_left_arm.get_base_to_tool_transform(position=left_meeting_coords,
+                                                                                            rpy=left_meeting_rpy)
+        transformation_matrix_base_to_tool_r = transform_right_arm.get_base_to_tool_transform(position=right_meeting_coords,
+                                                                                            rpy=right_meeting_rpy)
+        self.left_arm_meeting_conf = inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_l)
+        self.right_arm_meeting_conf = inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_r)
+
+        #################################END#############################################
+
 
         log(msg="start planning the experiment.")
         left_arm_start = self.left_arm_home
