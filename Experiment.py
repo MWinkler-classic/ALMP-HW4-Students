@@ -70,8 +70,9 @@ class Experiment:
     def plan_single_arm(self, planner, start_conf, goal_conf, description, active_id, command, static_arm_conf, cubes_real,
                             gripper_pre, gripper_post):
         path, cost = planner.find_path(start_conf=start_conf,
-                                       goal_conf=goal_conf,
-                                       manipulator=active_id)
+                                       goal_conf=goal_conf
+                                       )
+                                       # ,manipulator=active_id)
         # create the arm plan
         self.push_step_info_into_single_cube_passing_data(description,
                                                           active_id,
