@@ -121,6 +121,46 @@ class Experiment:
         
         return best_conf
 
+    def get_end_effector_position(self, conf, transform):
+        """
+        Get the end effector position for a given configuration.
+        
+        Args:
+            conf: Joint configuration (6 values)
+            transform: Transform object (left or right arm)
+            
+        Returns:
+            [x, y, z] position of end effector in world coordinates
+        """
+        # Get transformation matrices for all links
+        trans_matrix = transform.get_trans_matrix(conf)
+        
+        # The end effector is at the last link (wrist_3_link)
+        # Get position in base frame
+        end_effector_base = trans_matrix['wrist_3_link'][:3, 3]
+        
+        # Transform to world coordinates
+        end_effector_homogeneous = np.array([end_effector_base[0], end_effector_base[1], end_effector_base[2], 1.0])
+        end_effector_world = np.matmul(transform.base_transform, end_effector_homogeneous)
+        
+        return end_effector_world[:3].tolist()
+    
+    def update_cube_position(self, cubes, cube_i, new_position):
+        """
+        Update the position of a specific cube.
+        
+        Args:
+            cubes: List of cube positions
+            cube_i: Index of cube to update
+            new_position: New [x, y, z] position
+            
+        Returns:
+            Updated cubes list
+        """
+        updated_cubes = [list(cube) for cube in cubes]  # Deep copy
+        updated_cubes[cube_i] = new_position
+        return updated_cubes
+
     def plan_single_arm(self, planner, start_conf, goal_conf, description, active_id, command, static_arm_conf, cubes_real,
                             gripper_pre, gripper_post):
         log(msg=description)
@@ -204,12 +244,19 @@ class Experiment:
                                  left_arm_start, cubes, Gripper.OPEN, Gripper.STAY)  # gripper_pre: open before path, gripper_post: stay open after path
         ###############################################################################
 
+        # After moving to cube_approach, the gripper goes down and closes
+        # Calculate where the cube will be after picking up (at gripper position after going down)
+        # The movel command moves down 0.14, so cube will be at that new position
+        cube_after_pickup_pos = self.get_end_effector_position(cube_approach, right_arm_transform)
+        cube_after_pickup_pos[2] -= 0.14  # Account for the down movement
+        cubes_after_pickup = self.update_cube_position(cubes, cube_i, cube_after_pickup_pos)
+        
         self.push_step_info_into_single_cube_passing_data("picking up a cube: go down",
                                                           LocationType.RIGHT,
                                                           "movel",
                                                           list(self.left_arm_home),
                                                           [0, 0, -0.14],
-                                                          cubes,  # All cubes - visualizer will determine which is held
+                                                          cubes_after_pickup,  # Cube is now at gripper position
                                                           Gripper.STAY,  # gripper_pre: already open, stay open
                                                           Gripper.CLOSE)  # gripper_post: close after reaching cube
         #################################################################################
@@ -229,38 +276,50 @@ class Experiment:
         # TODO: gripper states
         # move right arm to meeting point (cube is now attached to right gripper)
         description = "right_arm => [cube pickup -> meeting point], left_arm static"
+        # Cube moves with right gripper to meeting point
+        cube_at_meeting_pos = self.get_end_effector_position(self.right_arm_meeting_conf, right_arm_transform)
+        cubes_at_meeting = self.update_cube_position(cubes, cube_i, cube_at_meeting_pos)
+        
         self.plan_single_arm(planner, cube_approach, self.right_arm_meeting_conf, description, active_arm, "move",
-                             left_arm_start, cubes, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
+                             left_arm_start, cubes_at_meeting, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
         # move left arm to meeting point
         description = "left_arm => [home -> meeting point], right_arm static"
         active_arm = LocationType.LEFT
         self.plan_single_arm(planner, left_arm_start, self.left_arm_meeting_conf, description, active_arm, "move",
-                             self.right_arm_meeting_conf, cubes, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay open, gripper_post: stay open
+                             self.right_arm_meeting_conf, cubes_at_meeting, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay open, gripper_post: stay open
 
-        # Transfer cube from right arm to left arm
+        # Transfer cube from right arm to left arm (cube stays at same position during transfer)
         self.push_step_info_into_single_cube_passing_data("transferring cube: left closes to grab",
                                                           LocationType.LEFT,
                                                           "movel",
                                                           list(self.right_arm_meeting_conf),
                                                           [0, 0, 0],  # No movement, just gripper action
-                                                          cubes,  # All cubes - visualizer determines which is held
+                                                          cubes_at_meeting,  # Cube still at meeting point
                                                           Gripper.STAY,  # gripper_pre: stay open
                                                           Gripper.CLOSE)  # gripper_post: close to grab cube
 
         # move left arm to B (cube now attached to left gripper)
         description = "left_arm => [meeting point -> place down], right_arm static"
         left_arm_end_conf = self.right_arm_home # TODO: find conf for placing the cube at B
+        # Cube moves with left gripper to placement position
+        cube_at_placement_pos = self.get_end_effector_position(left_arm_end_conf, left_arm_transform)
+        cubes_at_placement = self.update_cube_position(cubes, cube_i, cube_at_placement_pos)
+        
         self.plan_single_arm(planner, self.left_arm_meeting_conf, left_arm_end_conf, description, active_arm, "move",
-                             self.right_arm_meeting_conf, cubes, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
+                             self.right_arm_meeting_conf, cubes_at_placement, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
-        # Place down cube at B
+        # Place down cube at B (cube goes down with gripper then stays there)
+        cube_final_pos = list(cube_at_placement_pos)
+        cube_final_pos[2] -= 0.14  # Cube goes down with gripper
+        cubes_final = self.update_cube_position(cubes, cube_i, cube_final_pos)
+        
         self.push_step_info_into_single_cube_passing_data("placing down cube: go down and open gripper",
                                                           LocationType.LEFT,
                                                           "movel",
                                                           list(self.right_arm_meeting_conf),
                                                           [0, 0, -0.14],
-                                                          cubes,  # All cubes - visualizer tracks positions
+                                                          cubes_final,  # Cube at final position
                                                           Gripper.STAY,  # gripper_pre: stay closed
                                                           Gripper.OPEN)   # gripper_post: open to release cube
 
@@ -270,7 +329,7 @@ class Experiment:
     def plan_experiment(self):
         start_time = time.time()
 
-        exp_id = 2
+        exp_id = 1
         ur_params_right = UR5e_PARAMS(inflation_factor=1.0)
         ur_params_left = UR5e_without_camera_PARAMS(inflation_factor=1.0)
 
