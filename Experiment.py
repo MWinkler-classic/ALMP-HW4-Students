@@ -67,6 +67,60 @@ class Experiment:
         self.experiment_result[-1]["gripper_pre"].append(gripper_pre)
         self.experiment_result[-1]["gripper_post"].append(gripper_post)
 
+    def select_best_valid_ik_solution(self, ik_solutions, bb, ur_params, start_conf=None):
+        """
+        Select the best valid IK solution from multiple solutions.
+        
+        Args:
+            ik_solutions: Array of IK solutions (8x6)
+            bb: BuildingBlocks3D object for collision checking
+            ur_params: Robot parameters for joint limits
+            start_conf: Optional start configuration to prefer solutions closer to it
+            
+        Returns:
+            Best valid configuration, or None if no valid solution exists
+        """
+        limits = list(ur_params.mechamical_limits.values())
+        valid_solutions = []
+        
+        for i, conf in enumerate(ik_solutions):
+            # Check joint limits
+            within_limits = all(limits[j][0] <= angle <= limits[j][1] 
+                               for j, angle in enumerate(conf))
+            if not within_limits:
+                continue
+            
+            # Check collision
+            is_collision_free = bb.config_validity_checker(conf)
+            if not is_collision_free:
+                continue
+            
+            # Check edge validity from start if provided
+            if start_conf is not None:
+                edge_valid = bb.edge_validity_checker(start_conf, conf)
+                if not edge_valid:
+                    continue
+            
+            # Calculate cost (distance from start if provided, otherwise just joint sum)
+            if start_conf is not None:
+                cost = bb.compute_distance(start_conf, conf)
+            else:
+                cost = np.sum(np.abs(conf))  # Prefer solutions with smaller joint angles
+            
+            valid_solutions.append((i, conf, cost))
+        
+        if not valid_solutions:
+            return None
+        
+        # Sort by cost and return the best one
+        valid_solutions.sort(key=lambda x: x[2])
+        best_idx, best_conf, best_cost = valid_solutions[0]
+        
+        print(f"  Selected solution {best_idx} out of {len(ik_solutions)} (cost: {best_cost:.4f})")
+        print(f"  Found {len(valid_solutions)} valid solutions total")
+        
+        return best_conf
+
     def plan_single_arm(self, planner, start_conf, goal_conf, description, active_id, command, static_arm_conf, cubes_real,
                             gripper_pre, gripper_post):
         log(msg=description)
@@ -136,11 +190,18 @@ class Experiment:
         possible_cube_approach = inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,
                                                                                     transformation_matrix_base_to_tool)
 
-        cube_approach = possible_cube_approach[0]
+        # Select best valid cube approach configuration
+        print("Selecting best cube approach configuration...")
+        cube_approach = self.select_best_valid_ik_solution(
+            possible_cube_approach, bb, env.ur_params, right_arm_start)
+        
+        if cube_approach is None:
+            raise ValueError(f"No valid configuration found for cube {cube_i} at position {cube_coords}")
+        
         # plan the path
         print("cube approach conf: ", cube_approach)
         self.plan_single_arm(planner, right_arm_start, cube_approach, description, active_arm, "move",
-                                 left_arm_start, cubes, Gripper.OPEN, Gripper.STAY)
+                                 left_arm_start, cubes, Gripper.OPEN, Gripper.STAY)  # gripper_pre: open before path, gripper_post: stay open after path
         ###############################################################################
 
         self.push_step_info_into_single_cube_passing_data("picking up a cube: go down",
@@ -148,9 +209,9 @@ class Experiment:
                                                           "movel",
                                                           list(self.left_arm_home),
                                                           [0, 0, -0.14],
-                                                          [],
-                                                          Gripper.STAY,
-                                                          Gripper.CLOSE)
+                                                          cubes,  # All cubes - visualizer will determine which is held
+                                                          Gripper.STAY,  # gripper_pre: already open, stay open
+                                                          Gripper.CLOSE)  # gripper_post: close after reaching cube
         #################################################################################
         #                                                                               #
         #   #######  #######      ######   #######      #######                         #
@@ -166,26 +227,42 @@ class Experiment:
         print("finished part 2, starting part 3")
 
         # TODO: gripper states
-        # move right arm to meeting point
+        # move right arm to meeting point (cube is now attached to right gripper)
         description = "right_arm => [cube pickup -> meeting point], left_arm static"
         self.plan_single_arm(planner, cube_approach, self.right_arm_meeting_conf, description, active_arm, "move",
-                             left_arm_start, cubes, Gripper.OPEN, Gripper.STAY)
+                             left_arm_start, cubes, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
         # move left arm to meeting point
         description = "left_arm => [home -> meeting point], right_arm static"
         active_arm = LocationType.LEFT
         self.plan_single_arm(planner, left_arm_start, self.left_arm_meeting_conf, description, active_arm, "move",
-                             self.right_arm_meeting_conf, cubes, Gripper.STAY, Gripper.STAY)
+                             self.right_arm_meeting_conf, cubes, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay open, gripper_post: stay open
 
-        # move cube from right arm to left arm # TODO
+        # Transfer cube from right arm to left arm
+        self.push_step_info_into_single_cube_passing_data("transferring cube: left closes to grab",
+                                                          LocationType.LEFT,
+                                                          "movel",
+                                                          list(self.right_arm_meeting_conf),
+                                                          [0, 0, 0],  # No movement, just gripper action
+                                                          cubes,  # All cubes - visualizer determines which is held
+                                                          Gripper.STAY,  # gripper_pre: stay open
+                                                          Gripper.CLOSE)  # gripper_post: close to grab cube
 
-        # move left arm to B
+        # move left arm to B (cube now attached to left gripper)
         description = "left_arm => [meeting point -> place down], right_arm static"
         left_arm_end_conf = self.right_arm_home # TODO: find conf for placing the cube at B
         self.plan_single_arm(planner, self.left_arm_meeting_conf, left_arm_end_conf, description, active_arm, "move",
-                             self.right_arm_meeting_conf, cubes, Gripper.OPEN, Gripper.STAY)
+                             self.right_arm_meeting_conf, cubes, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
-        # place down cube at B # TODO
+        # Place down cube at B
+        self.push_step_info_into_single_cube_passing_data("placing down cube: go down and open gripper",
+                                                          LocationType.LEFT,
+                                                          "movel",
+                                                          list(self.right_arm_meeting_conf),
+                                                          [0, 0, -0.14],
+                                                          cubes,  # All cubes - visualizer tracks positions
+                                                          Gripper.STAY,  # gripper_pre: stay closed
+                                                          Gripper.OPEN)   # gripper_post: open to release cube
 
         return left_arm_end_conf, self.right_arm_meeting_conf # return left and right end position, so it can be the start position for the next interation.
 
@@ -240,19 +317,18 @@ class Experiment:
         left_arm = env.arm_base_location[LocationType.LEFT]
         right_arm = env.arm_base_location[LocationType.RIGHT]
         tool_len = inverse_kinematics.tool_length
-        right_x_bias = 0.75
-        right_y_bias = 0.25
+        right_x_bias = 0.6
+        right_y_bias = 0.5
 
         base_meeting_coords = [((1-right_x_bias)*left_arm[0] + right_x_bias*right_arm[0]),
                                ((1-right_y_bias)*left_arm[1] + right_y_bias*right_arm[1]),
-                               0.2] # TODO: find correct Z value using simulations
+                               0.35] # Valid Z value found via simulation search
         left_meeting_coords = (np.array(base_meeting_coords) + np.array([tool_len/2, -tool_len/2, 0])).tolist()
         right_meeting_coords = (np.array(base_meeting_coords) - np.array([tool_len/2, -tool_len/2, 0])).tolist()
-        # right_meeting_coords = base_meeting_coords + [-tool_len/2, tool_len/2, 0]
 
 
-        left_meeting_rpy = [np.pi/2, 0, np.pi*3/4]  # TODO: find correct orientation using simulations
-        right_meeting_rpy = [0, 0, np.pi*3/4]
+        left_meeting_rpy = [0, 0, np.pi*3/4]  # TODO Validate via simulation
+        right_meeting_rpy = [np.pi/2, 0, np.pi*3/4]
 
         transformation_matrix_base_to_tool_l = transform_left_arm.get_base_to_tool_transform(position=left_meeting_coords,
                                                                                             rpy=left_meeting_rpy)
@@ -261,8 +337,24 @@ class Experiment:
         left_arm_meeting_confs= inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_l)
         right_arm_meeting_confs= inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_r)
 
-        self.left_arm_meeting_conf = left_arm_meeting_confs[0]  # TODO: choose better solution? maybe lowest cost from all available ones. same for other arm
-        self.right_arm_meeting_conf = right_arm_meeting_confs[0]
+        # Select best valid IK solutions
+        print("Selecting best left arm meeting point configuration...")
+        bb_left = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
+                                   ur_params=ur_params_left, transform=transform_left_arm)
+        self.left_arm_meeting_conf = self.select_best_valid_ik_solution(
+            left_arm_meeting_confs, bb_left, ur_params_left, self.left_arm_home)
+        
+        print("Selecting best right arm meeting point configuration...")
+        bb_right = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
+                                    ur_params=ur_params_right, transform=transform_right_arm)
+        self.right_arm_meeting_conf = self.select_best_valid_ik_solution(
+            right_arm_meeting_confs, bb_right, ur_params_right, self.right_arm_home)
+        
+        if self.left_arm_meeting_conf is None:
+            raise ValueError("No valid left arm meeting point configuration found!")
+        if self.right_arm_meeting_conf is None:
+            raise ValueError("No valid right arm meeting point configuration found!")
+        
         print("left conf for meeting point: ", self.left_arm_meeting_conf)
         print("right conf for meeting point: ", self.right_arm_meeting_conf)
 
@@ -273,6 +365,7 @@ class Experiment:
         left_arm_start = self.left_arm_home
         right_arm_start = self.right_arm_home
         for i in range(len(self.cubes)):
+        #for i in range(1): # only one cube for demo
             left_arm_start, right_arm_start = self.plan_single_cube_passing(i, self.cubes, left_arm_start, right_arm_start,env, bb, rrt_star_planner, transform_left_arm, transform_right_arm)
 
 
