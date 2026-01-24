@@ -87,10 +87,16 @@ class RRTStarPlanner(RRTMotionPlanner):
         start_time = time.time()
 
         # run until time budget expires
+        print("begin planning")
+        print("planning params: max_step_size =", self.max_step_size, ", max_itr =", self.max_itr, ", stop_on_goal =", self.stop_on_goal, ", k =", self.k,
+            ", goal_prob =", self.goal_prob)
         while (time.time() - start_time) < max_time_secs and (
                 not (self.max_itr is not None and iteration > self.max_itr)):
             iteration += 1
+            if iteration % 100 == 0:
+                print("RRT* iteration:", iteration, ", time elapsed (s):", round(time.time() - start_time, 2))
             rand_config = self.bb.sample_random_config(self.goal_prob, self.goal)
+            # print("rand config: ", rand_config)
             near_id, near_config = self.tree.get_nearest_config(rand_config)
             new_config = self.extend(near_config, rand_config)
             new_id = self.add_node(near_id, near_config, new_config)
@@ -103,11 +109,12 @@ class RRTStarPlanner(RRTMotionPlanner):
             # if self.visualizer is not None and iteration % 5 == 0:
             #     self.visualizer.visualize_sampling(rand_config, near_config, new_config, self.tree, self.start, self.goal)
 
+        print("finished planning. goal_id =", goal_id)
         if goal_id is None:
-            return np.array([], dtype=float)
+            return (np.array([], dtype=float), np.inf)
 
         path = self.reconstruct_path(goal_id)
-        return np.array(path, dtype=float)
+        return (np.array(path, dtype=float), self.compute_cost(path))
 
     def compute_cost(self, plan):
         # HW3 3

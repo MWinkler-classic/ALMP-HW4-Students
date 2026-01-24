@@ -91,6 +91,17 @@ class RRTTree(object):
         @param config Sampled configuration.
         '''
         # compute distances from all vertices
+        # print("get nearest config called")
+        # print("config:", config)
+        # print("vertices:", self.vertices)
+        # print("vertices configs:", [v.config for v in self.vertices.values()])
+        # def fmt_conf(x, precision=3):
+        #     x = np.asarray(x, dtype=float)
+        #     return np.array2string(x, precision=precision, suppress_small=True,
+        #                            separator=", ", floatmode="fixed", max_line_width=10_000)
+        #
+        # print(f"config: {fmt_conf(config)}")
+        # print("vertices configs:", [fmt_conf(v.config) for v in self.vertices.values()])
         dists = []
         for _, vertex in self.vertices.items():
             dists.append(self.bb.compute_distance(config, vertex.config))

@@ -69,6 +69,7 @@ class Experiment:
 
     def plan_single_arm(self, planner, start_conf, goal_conf, description, active_id, command, static_arm_conf, cubes_real,
                             gripper_pre, gripper_post):
+        log(msg=description)
         path, cost = planner.find_path(start_conf=start_conf,
                                        goal_conf=goal_conf
                                        )
@@ -117,9 +118,27 @@ class Experiment:
         #      #     #######      ######   #######      ########                        #
         #                                                                               #
         #################################################################################
-        cube_approach = None #TODO 2: find a conf for the arm to get the correct cube
+        # TODO 2: find a conf for the arm to get the correct cube
+        cube_coords = cubes[cube_i]
 
+        right_arm = env.arm_base_location[LocationType.RIGHT]
+        tool_len = inverse_kinematics.tool_length
+
+        LIFT_HEIGHT = 0.2  # TODO: find correct Z value using simulations
+        pickup_coords = (np.array(cube_coords) + np.array([0, 0, LIFT_HEIGHT])).tolist()
+
+        pickup_rpy = [0, -np.pi/2, 0] # TODO: find correct orientation using simulations
+
+        transformation_matrix_base_to_tool = right_arm_transform.get_base_to_tool_transform(
+            position=pickup_coords,
+            rpy=pickup_rpy)
+
+        possible_cube_approach = inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,
+                                                                                    transformation_matrix_base_to_tool)
+
+        cube_approach = possible_cube_approach[0]
         # plan the path
+        print("cube approach conf: ", cube_approach)
         self.plan_single_arm(planner, right_arm_start, cube_approach, description, active_arm, "move",
                                  left_arm_start, cubes, Gripper.OPEN, Gripper.STAY)
         ###############################################################################
@@ -143,7 +162,32 @@ class Experiment:
         #      #     #######      ######   #######      #######                         #
         #                                                                               #
         #################################################################################
-        return None, None #TODO 3: return left and right end position, so it can be the start position for the next interation.
+        # TODO 3
+        print("finished part 2, starting part 3")
+
+        # TODO: gripper states
+        # move right arm to meeting point
+        description = "right_arm => [cube pickup -> meeting point], left_arm static"
+        self.plan_single_arm(planner, cube_approach, self.right_arm_meeting_conf, description, active_arm, "move",
+                             left_arm_start, cubes, Gripper.OPEN, Gripper.STAY)
+
+        # move left arm to meeting point
+        description = "left_arm => [home -> meeting point], right_arm static"
+        active_arm = LocationType.LEFT
+        self.plan_single_arm(planner, left_arm_start, self.left_arm_meeting_conf, description, active_arm, "move",
+                             self.right_arm_meeting_conf, cubes, Gripper.STAY, Gripper.STAY)
+
+        # move cube from right arm to left arm # TODO
+
+        # move left arm to B
+        description = "left_arm => [meeting point -> place down], right_arm static"
+        left_arm_end_conf = self.right_arm_home # TODO: find conf for placing the cube at B
+        self.plan_single_arm(planner, self.left_arm_meeting_conf, left_arm_end_conf, description, active_arm, "move",
+                             self.right_arm_meeting_conf, cubes, Gripper.OPEN, Gripper.STAY)
+
+        # place down cube at B # TODO
+
+        return left_arm_end_conf, self.right_arm_meeting_conf # return left and right end position, so it can be the start position for the next interation.
 
 
     def plan_experiment(self):
@@ -176,6 +220,7 @@ class Experiment:
         # cubes
         if self.cubes is None:
             self.cubes = self.get_cubes_for_experiment(exp_id, env)
+            print("cubes for the experiment: ", self.cubes)
 
         log(msg="calculate meeting point for the test.")
         ################################################################################
@@ -189,7 +234,7 @@ class Experiment:
         #      #     #######      ######   #######      #####                           #
         #                                                                               #
         #################################################################################
-
+        # TODO 1
         ###############################START#############################################
 
         left_arm = env.arm_base_location[LocationType.LEFT]
@@ -206,15 +251,20 @@ class Experiment:
         # right_meeting_coords = base_meeting_coords + [-tool_len/2, tool_len/2, 0]
 
 
-        left_meeting_rpy = [np.pi/2, np.pi/2, 0]  # TODO: find correct orientation using simulations
-        right_meeting_rpy = [np.pi/2, np.pi/2, 0]
+        left_meeting_rpy = [np.pi/2, 0, np.pi*3/4]  # TODO: find correct orientation using simulations
+        right_meeting_rpy = [0, 0, np.pi*3/4]
 
         transformation_matrix_base_to_tool_l = transform_left_arm.get_base_to_tool_transform(position=left_meeting_coords,
                                                                                             rpy=left_meeting_rpy)
         transformation_matrix_base_to_tool_r = transform_right_arm.get_base_to_tool_transform(position=right_meeting_coords,
                                                                                             rpy=right_meeting_rpy)
-        self.left_arm_meeting_conf = inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_l)
-        self.right_arm_meeting_conf = inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_r)
+        left_arm_meeting_confs= inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_l)
+        right_arm_meeting_confs= inverse_kinematics.inverse_kinematic_solution(inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_r)
+
+        self.left_arm_meeting_conf = left_arm_meeting_confs[0]  # TODO: choose better solution? maybe lowest cost from all available ones. same for other arm
+        self.right_arm_meeting_conf = right_arm_meeting_confs[0]
+        print("left conf for meeting point: ", self.left_arm_meeting_conf)
+        print("right conf for meeting point: ", self.right_arm_meeting_conf)
 
         #################################END#############################################
 

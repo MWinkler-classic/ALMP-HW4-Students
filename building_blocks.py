@@ -40,10 +40,16 @@ class BuildingBlocks3D(object):
         # HW2 5.2.1
         uni_sample = np.random.uniform(low=0.0, high=1.0, size=None)
         if uni_sample <= goal_prob:
+            # return goal_conf
+            # print("returning goal conf")
+            # print("goal conf: ", goal_conf)
             return goal_conf
         else:
             # sample a random dist with the same size as the goal conf, limited by the mechanical limit.
-            return np.random.uniform(low=-self.single_mechanical_limit, high=self.single_mechanical_limit, size=len(goal_conf))
+            # return np.random.uniform(low=-self.single_mechanical_limit, high=self.single_mechanical_limit, size=len(goal_conf))
+            # return np.random.uniform(low=-self.single_mechanical_limit, high=self.single_mechanical_limit, size=6)
+            rand = np.random.uniform(low=-self.single_mechanical_limit, high=self.single_mechanical_limit, size=6)
+            return rand
 
     def _convert_to_3d_spheres(self, link_spheres):
         new_spheres = []
@@ -59,8 +65,7 @@ class BuildingBlocks3D(object):
         """
         # TODO: HW2 5.2.2- Pay attention that function is a little different than in HW2
             # TODO: check for robot-robot collisiosn
-                # idea: check robot-robot collisions by creating 1 sphere that encases each robot, and check for sphere-sphere collisions.
-                # generate each sphere by measuring distance to end effector. need to make sure in that case that end effector is always pointing out
+                # idea: check robot-robot collisions by creating a single sphere for each link, and check for sphere-sphere collisions.
 
         # old code:
         sphere_coords = self.transform.conf2sphere_coords(conf)
@@ -83,7 +88,7 @@ class BuildingBlocks3D(object):
             dists = np.linalg.norm(s1[:, None, :] - s2[None, :, :], axis=2)
 
             if np.any(dists < r_sum):
-                print("self-collision detected between " + link1 + " and " + link2)
+                # print("self-collision detected between " + link1 + " and " + link2)
                 return False
 
         # ------------------------------------------------------------
@@ -99,7 +104,7 @@ class BuildingBlocks3D(object):
             # floor collision (except shoulder)
             if link != "shoulder_link":
                 if np.any(spheres[:, 2] < r_link):
-                    print("floor collision detected on link " + link)
+                    # print("floor collision detected on link " + link)
                     return False
 
             # obstacle collision
@@ -109,7 +114,7 @@ class BuildingBlocks3D(object):
                     axis=2
                 )
                 if np.any(dists < (r_link + obs_r)):
-                    print("obstacle collision detected on link " + link)
+                    # print("obstacle collision detected on link " + link)
                     return False
 
         return True
@@ -144,7 +149,10 @@ class BuildingBlocks3D(object):
         @param conf1 - configuration 1
         @param conf2 - configuration 2
         """
+        # print("conf1: ", conf1)
+        # print("conf2: ", conf2)
         return np.dot(self.cost_weights, np.power(conf1 - conf2, 2)) ** 0.5
+
     def validate_IK_solutions(self,configurations : np.array, original_transformation):
         
         legal_conf = []
