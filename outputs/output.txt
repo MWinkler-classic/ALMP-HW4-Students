@@ -110,3 +110,162 @@ STEP: right_arm => [start -> cube pickup], left_arm static
 STEP: right_arm => [cube pickup -> meeting point], left_arm static
 STEP: left_arm => [home -> meeting point], right_arm static
 STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: calculate meeting point for the test.
+STEP: start planning the experiment.
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [start -> cube pickup], left_arm static
+STEP: right_arm => [cube pickup -> meeting point], left_arm static
+STEP: left_arm => [home -> meeting point], right_arm static
+STEP: left_arm => [meeting point -> place down], right_arm static
