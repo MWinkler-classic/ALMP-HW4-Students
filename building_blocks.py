@@ -45,9 +45,6 @@ class BuildingBlocks3D(object):
             # print("goal conf: ", goal_conf)
             return goal_conf
         else:
-            # sample a random dist with the same size as the goal conf, limited by the mechanical limit.
-            # return np.random.uniform(low=-self.single_mechanical_limit, high=self.single_mechanical_limit, size=len(goal_conf))
-            # return np.random.uniform(low=-self.single_mechanical_limit, high=self.single_mechanical_limit, size=6)
             rand = np.random.uniform(low=-self.single_mechanical_limit, high=self.single_mechanical_limit, size=6)
             return rand
 
@@ -71,6 +68,7 @@ class BuildingBlocks3D(object):
         sphere_coords = self.transform.conf2sphere_coords(conf)
         # print("sphere_coords: ", sphere_coords)
         radii = self.ur_params.sphere_radius
+
 
         # ------------------------------------------------------------
         # 2) Self-collision: link-link

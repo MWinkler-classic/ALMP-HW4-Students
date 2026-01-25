@@ -80,6 +80,11 @@ class Experiment:
         Returns:
             Best valid configuration, or None if no valid solution exists
         """
+
+        # TODO: idea: alternative approach. take all valid solutions, and run the planner while sampling all of them.
+        #  take the best (or first) solution reached this way.
+        #  maybe once reaching a solution after X iterations, continue another O(X) iterations to try to find better solution.
+
         limits = list(ur_params.mechamical_limits.values())
         valid_solutions = []
         
@@ -96,6 +101,7 @@ class Experiment:
                 continue
             
             # Check edge validity from start if provided
+            # TODO: this checks only from start to conf, may get false collisions while a path is still possible
             if start_conf is not None:
                 edge_valid = bb.edge_validity_checker(start_conf, conf)
                 if not edge_valid:
@@ -162,8 +168,9 @@ class Experiment:
         return updated_cubes
 
     def plan_single_arm(self, planner, start_conf, goal_conf, description, active_id, command, static_arm_conf, cubes_real,
-                            gripper_pre, gripper_post):
+                            gripper_pre, gripper_post, env):
         log(msg=description)
+        update_environment(env, active_id, static_arm_conf, cubes_real)
         path, cost = planner.find_path(start_conf=start_conf,
                                        goal_conf=goal_conf
                                        )
@@ -241,7 +248,7 @@ class Experiment:
         # plan the path
         print("cube approach conf: ", cube_approach)
         self.plan_single_arm(planner, right_arm_start, cube_approach, description, active_arm, "move",
-                                 left_arm_start, cubes, Gripper.OPEN, Gripper.STAY)  # gripper_pre: open before path, gripper_post: stay open after path
+                                 left_arm_start, cubes, Gripper.OPEN, Gripper.STAY, env)  # gripper_pre: open before path, gripper_post: stay open after path
         ###############################################################################
 
         # After moving to cube_approach, the gripper goes down and closes
@@ -281,13 +288,13 @@ class Experiment:
         cubes_at_meeting = self.update_cube_position(cubes, cube_i, cube_at_meeting_pos)
         
         self.plan_single_arm(planner, cube_approach, self.right_arm_meeting_conf, description, active_arm, "move",
-                             left_arm_start, cubes_at_meeting, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
+                             left_arm_start, cubes_at_meeting, Gripper.STAY, Gripper.STAY, env)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
         # move left arm to meeting point
         description = "left_arm => [home -> meeting point], right_arm static"
         active_arm = LocationType.LEFT
         self.plan_single_arm(planner, left_arm_start, self.left_arm_meeting_conf, description, active_arm, "move",
-                             self.right_arm_meeting_conf, cubes_at_meeting, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay open, gripper_post: stay open
+                             self.right_arm_meeting_conf, cubes_at_meeting, Gripper.STAY, Gripper.STAY, env)  # gripper_pre: stay open, gripper_post: stay open
 
         # Transfer cube from right arm to left arm (cube stays at same position during transfer)
         self.push_step_info_into_single_cube_passing_data("transferring cube: left closes to grab",
@@ -307,7 +314,7 @@ class Experiment:
         cubes_at_placement = self.update_cube_position(cubes, cube_i, cube_at_placement_pos)
         
         self.plan_single_arm(planner, self.left_arm_meeting_conf, left_arm_end_conf, description, active_arm, "move",
-                             self.right_arm_meeting_conf, cubes_at_placement, Gripper.STAY, Gripper.STAY)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
+                             self.right_arm_meeting_conf, cubes_at_placement, Gripper.STAY, Gripper.STAY, env)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
         # Place down cube at B (cube goes down with gripper then stays there)
         cube_final_pos = list(cube_at_placement_pos)
@@ -376,7 +383,7 @@ class Experiment:
         left_arm = env.arm_base_location[LocationType.LEFT]
         right_arm = env.arm_base_location[LocationType.RIGHT]
         tool_len = inverse_kinematics.tool_length
-        right_x_bias = 0.6
+        right_x_bias = 0.5
         right_y_bias = 0.5
 
         base_meeting_coords = [((1-right_x_bias)*left_arm[0] + right_x_bias*right_arm[0]),

@@ -18,6 +18,8 @@ class RRTStarPlanner(RRTMotionPlanner):
         k=None,
         goal_prob=0.1,
         visualizer=None,
+        max_plan_time=250.0,
+        k_mult=10
     ):
         # Initialize base class (sets bb, tree, start, goal, ext_mode, goal_prob, visualizer)
         super().__init__(bb, ext_mode, goal_prob, start, goal, visualizer)
@@ -27,6 +29,8 @@ class RRTStarPlanner(RRTMotionPlanner):
         self.stop_on_goal = stop_on_goal
         self.k = k
         self.max_step_size = max_step_size
+        self.max_plan_time = max_plan_time
+        self.k_mult = k_mult
 
     def dist(self, config1, config2):
         return self.bb.compute_distance(config1, config2)
@@ -44,7 +48,7 @@ class RRTStarPlanner(RRTMotionPlanner):
 
         parent_id, parent_config = near_id, near_config
         new_config_cost = self.tree.get_cost(near_id) + self.dist(near_config, new_config)
-        k = 60*int(np.ceil(np.log(max(len(self.tree.vertices), 2)))) # TODO: determine best constant multiplier to k
+        k = self.k_mult * int(np.ceil(np.log(max(len(self.tree.vertices), 2))))
         k = min(k, len(self.tree.vertices)-1)
         if k >= 2: # search for best parent
             knn_ids, knn_configs = self.tree.get_k_nearest_neighbors(new_config, k)
@@ -139,8 +143,7 @@ class RRTStarPlanner(RRTMotionPlanner):
         self.tree = RRTTree(self.bb)
         root_id = self.tree.add_vertex(np.asarray(self.start, dtype=float))
 
-        avg_time_secs = 50.0
-        max_time_secs = 5.0 * avg_time_secs
+        max_time_secs = self.max_plan_time
         goal_id = None
         iteration = 0
         start_time = time.time()

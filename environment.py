@@ -102,6 +102,7 @@ class Environment(object):
 
     def update_obstacles(self, cubes, static_arm_conf):
         # cubes
+        # print("self.obstacles_non_np = ", self.obstacles_non_np)
         all_obstacles = [*cubes, *self.get_static_arm_spheres(self.arm_transforms[self.get_other_arm()], static_arm_conf), *self.obstacles_non_np]
         self.obstacles = np.array(all_obstacles)
 
