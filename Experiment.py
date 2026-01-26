@@ -309,9 +309,10 @@ class Experiment:
         
         bb_placement = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
                                        ur_params=ur_params_left, transform=left_arm_transform)
-        update_environment(env, LocationType.LEFT, self.right_arm_meeting_conf, cubes_at_meeting)
+        update_environment(env, LocationType.LEFT, right_meeting_point_conf, cubes_at_meeting)
         
-        left_arm_end_conf = None
+        valid_placement_confs = []
+        left_arm_end_confs = []
         zone_b_coords = None
         placement_coords = None
         
@@ -332,22 +333,23 @@ class Experiment:
                 inverse_kinematics.DH_matrix_UR5e,
                 transformation_matrix_placement)
             
-            # Try to find valid configuration
-            left_arm_end_conf = self.select_best_valid_ik_solution(
-                possible_placement_confs, bb_placement, ur_params_left, self.left_arm_meeting_conf)
+            # Try to find valid configurations (returns list of valid configs)
+            valid_placement_confs = self.select_valid_ik_solutions(
+                possible_placement_confs, bb_placement, ur_params_left, start_conf=None)
             
-            if left_arm_end_conf is not None:
-                print(f"✓ Successfully found valid placement at position {i+1}")
+            if len(valid_placement_confs) > 0:
+                print(f"✓ Successfully found {len(valid_placement_confs)} valid placement(s) at position {i+1}")
                 print(f"  Zone B placement coords: {zone_b_coords}")
                 print(f"  Zone B approach coords (with lift): {placement_coords}")
+                left_arm_end_confs = valid_placement_confs
                 break
         
-        if left_arm_end_conf is None:
+        if len(valid_placement_confs) == 0:
             raise ValueError(f"No valid configuration found for any Zone B placement position. Tried {len(candidate_positions)} positions.")
         
         # IMPORTANT: Cube is still at meeting point during planning!
         # Plan with cube at current (meeting) position, not final position
-        self.plan_single_arm(planner, left_meeting_point_conf, [left_arm_end_conf], description, active_arm, "move",
+        left_arm_end_conf = self.plan_single_arm(planner, left_meeting_point_conf, left_arm_end_confs, description, active_arm, "move",
                              right_meeting_point_conf, cubes_at_meeting, Gripper.STAY, Gripper.STAY, env, ur_params_left, left_arm_transform)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
         # AFTER planning, update cube position to placement position for the movel step
