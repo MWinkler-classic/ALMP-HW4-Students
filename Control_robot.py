@@ -38,10 +38,10 @@ class BaseRobot:
     def set_active_robot(self, robot_type:LocationType):
         if robot_type == LocationType.LEFT:
             self.active_robot = self.robot_left
-            self.arm_rotation_fix = self.left_arm_rotation_shift
+            # self.arm_rotation_fix = self.left_arm_rotation_shift
         if robot_type == LocationType.RIGHT:
             self.active_robot = self.robot_right
-            self.arm_rotation_fix = self.right_arm_rotation_shift
+            # self.arm_rotation_fix = self.right_arm_rotation_shift
 
     def move(self, config):
         dist = lambda a, b: np.linalg.norm(np.array(a) - np.array(b))
