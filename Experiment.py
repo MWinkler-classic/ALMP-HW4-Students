@@ -72,13 +72,13 @@ class Experiment:
     def select_valid_ik_solutions(self, ik_solutions, bb, ur_params, start_conf=None):
         """
         Select only valid IK solutions from multiple solutions.
-        
+
         Args:
             ik_solutions: Array of IK solutions (8x6)
             bb: BuildingBlocks3D object for collision checking
             ur_params: Robot parameters for joint limits
             start_conf: Optional start configuration to prefer solutions closer to it
-            
+
         Returns:
             Best valid configuration, or None if no valid solution exists
         """
@@ -88,11 +88,12 @@ class Experiment:
         
         for i, conf in enumerate(ik_solutions):
             # Check joint limits
-            within_limits = all(limits[j][0] <= angle <= limits[j][1] 
-                               for j, angle in enumerate(conf))
-            if not within_limits:
-                continue
-            
+            # within_limits = all(limits[j][0] <= angle <= limits[j][1]
+            #                    for j, angle in enumerate(conf))
+            # if not within_limits:
+            #     print("not within limits")
+            #     continue
+
             # Check collision
             is_collision_free = bb.config_validity_checker(conf)
             if not is_collision_free:
@@ -218,7 +219,7 @@ class Experiment:
 
         # plan the path
         print("cube approach confs: ", cube_approaches)
-        cube_conf = self.plan_single_arm(planner, right_arm_start, cube_approach, description, active_arm, "move",
+        cube_conf = self.plan_single_arm(planner, right_arm_start, cube_approaches, description, active_arm, "move",
                                  left_arm_start, cubes, Gripper.OPEN, Gripper.STAY, env, ur_params_right, right_arm_transform)  # gripper_pre: open before path, gripper_post: stay open after path
         ###############################################################################
 
@@ -245,7 +246,10 @@ class Experiment:
         # move right arm to meeting point (cube is now attached to right gripper)
         description = "right_arm => [cube pickup -> meeting point], left_arm static"
         # TODO: start conf correct? cube conf or maybe it is updated after the movel they provided?
-        right_meeting_point_conf = self.plan_single_arm(planner, cube_conf, self.right_arm_meeting_confs, description, active_arm, "move", left_arm_start, cubes_after_pickup, Gripper.STAY, Gripper.STAY, env)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
+        right_meeting_point_conf = self.plan_single_arm(planner, cube_conf, self.right_arm_meeting_confs, description,
+                                                        active_arm, "move", left_arm_start, cubes_after_pickup,
+                                                        Gripper.STAY, Gripper.STAY,
+                                                        env, ur_params_right, right_arm_transform)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
         # TODO: moved these lines from before to after the planning step. maybe wrong.
         # Cube moves with right gripper to meeting point
@@ -270,35 +274,35 @@ class Experiment:
 
         # move left arm to B (cube now attached to left gripper)
         description = "left_arm => [meeting point -> place down], right_arm static"
-        left_arm_end_conf = self.right_arm_home # TODO: find conf for placing the cube at B
+        left_arm_end_conf = self.left_arm_home  # TODO: find conf for placing the cube at B
 
         # IMPORTANT: Cube is still at meeting point during planning!
         # Plan with cube at current (meeting) position, not final position
-        self.plan_single_arm(planner, self.left_arm_meeting_confs, left_arm_end_conf, description, active_arm, "move",
+        self.plan_single_arm(planner, left_meeting_point_conf, [left_arm_end_conf], description, active_arm, "move",
                              right_meeting_point_conf, cubes_at_meeting, Gripper.STAY, Gripper.STAY, env, ur_params_left, left_arm_transform)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
         # AFTER planning, update cube position to placement position for the movel step
         cube_at_placement_pos = self.get_end_effector_position(left_arm_end_conf, left_arm_transform)
         cubes_at_placement = self.update_cube_position(cubes, cube_i, cube_at_placement_pos)
-        
-        self.plan_single_arm(planner, self.left_arm_meeting_conf, left_arm_end_conf, description, active_arm, "move",
-                             right_meeting_point_conf, cubes_at_placement, Gripper.STAY, Gripper.STAY, env)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
+
+        # self.plan_single_arm(planner, self.left_arm_meeting_conf, left_arm_end_conf, description, active_arm, "move",
+        #                      right_meeting_point_conf, cubes_at_placement, Gripper.STAY, Gripper.STAY, env)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
         # Place down cube at B (cube goes down with gripper then stays there)
         cube_final_pos = list(cube_at_placement_pos)
         cube_final_pos[2] -= 0.14  # Cube goes down with gripper
         cubes_final = self.update_cube_position(cubes, cube_i, cube_final_pos)
-        
+
         self.push_step_info_into_single_cube_passing_data("placing down cube: go down and open gripper",
                                                           LocationType.LEFT,
                                                           "movel",
-                                                          list(self.right_arm_meeting_conf),
+                                                          list(right_meeting_point_conf),
                                                           [0, 0, -0.14],
                                                           cubes_final,  # Cube at final position
                                                           Gripper.STAY,  # gripper_pre: stay closed
                                                           Gripper.OPEN)   # gripper_post: open to release cube
 
-        return left_arm_end_conf, self.right_arm_meeting_conf # return left and right end position, so it can be the start position for the next interation.
+        return left_arm_end_conf, right_meeting_point_conf # return left and right end position, so it can be the start position for the next interation.
 
 
     def plan_experiment(self, DEMO=False):
@@ -348,13 +352,13 @@ class Experiment:
         base_meeting_coords = [((1-right_x_bias)*left_arm[0] + right_x_bias*right_arm[0]),
                                ((1-right_y_bias)*left_arm[1] + right_y_bias*right_arm[1]),
                                0.5]  # Increased Z from 0.35 to 0.5 to avoid collisions
-        left_meeting_coords = (np.array(base_meeting_coords) + np.array([tool_len/2, 0, 0])).tolist() #check y should be 0 ?
-        right_meeting_coords = (np.array(base_meeting_coords) - np.array([tool_len/2, 0, 0])).tolist()
+        left_meeting_coords = (np.array(base_meeting_coords) + np.array([-tool_len/2, tool_len/2, 0])).tolist() #check y should be 0 ?
+        right_meeting_coords = (np.array(base_meeting_coords) + np.array([tool_len/2, -tool_len/2, 0])).tolist()
 
         print(f"DEBUG: Meeting point coords - base: {base_meeting_coords}, left: {left_meeting_coords}, right: {right_meeting_coords}")
 
-        left_meeting_rpy = [0, 0, np.pi*3/4]  # TODO Validate via simulation
-        right_meeting_rpy = [np.pi/2, 0, -np.pi*3/4]
+        left_meeting_rpy = [np.pi/2, 0, np.pi*1/4]  # TODO Validate via simulation
+        right_meeting_rpy = [np.pi/2, np.pi, -np.pi*3/4]
 
         transformation_matrix_base_to_tool_l = transform_left_arm.get_base_to_tool_transform(position=left_meeting_coords,
                                                                                             rpy=left_meeting_rpy)
@@ -366,34 +370,35 @@ class Experiment:
         print("transform to r: ", transformation_matrix_base_to_tool_r)
         print("IK r: ", inverse_kinematics.inverse_kinematic_solution(
             inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_r))
+
         bb_left = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
                                    ur_params=ur_params_left, transform=transform_left_arm)
         update_environment(env, LocationType.LEFT, self.right_arm_home, [])  # Set environment for left arm
         self.left_arm_meeting_confs = self.select_valid_ik_solutions(inverse_kinematics.inverse_kinematic_solution(
             inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_l),
-            bb, ur_params_left)
+            bb_left, ur_params_left)
 
-        print("Selecting best right arm meeting point configuration (no collision check with other arm)...")
-        bb_right = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
+        bb = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
                                     ur_params=ur_params_right, transform=transform_right_arm)
         update_environment(env, LocationType.RIGHT, self.left_arm_home, [])  # Set environment for right arm
         self.right_arm_meeting_confs = self.select_valid_ik_solutions(inverse_kinematics.inverse_kinematic_solution(
-            inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_r),
+            inverse_kinematics.DH_matrix_UR5e, transformation_matrix_base_to_tool_r),
             bb, ur_params_right)  # No start_conf = no edge checking(?)
 
         print("right confs: ", self.right_arm_meeting_confs)
-        if DEMO:
-            visualizer.draw_two_robots(conf_left=self.left_arm_meeting_confs[0], conf_right=self.right_arm_meeting_confs[0])
+
 
         if len(self.left_arm_meeting_confs) == 0:
             raise ValueError("No valid left arm meeting point configuration found!")
         if len(self.right_arm_meeting_confs) == 0:
             raise ValueError("No valid right arm meeting point configuration found!")
-        
-        # print("left conf for meeting points: ", self.left_arm_meeting_confs)
+
+        print("left conf for meeting points: ", self.left_arm_meeting_confs)
         print("right conf for meeting points: ", self.right_arm_meeting_confs)
 
         if DEMO:
+            visualizer.draw_two_robots(conf_left=self.left_arm_meeting_confs[0],
+                                       conf_right=self.right_arm_meeting_confs[0])
             return [self.left_arm_meeting_confs, self.right_arm_meeting_confs]
 
         #################################END#############################################
@@ -403,7 +408,7 @@ class Experiment:
         left_arm_start = self.left_arm_home
         right_arm_start = self.right_arm_home
         for i in range(len(self.cubes)):
-            left_arm_start, right_arm_start = self.plan_single_cube_passing(i, self.cubes, left_arm_start, right_arm_start,env, bb, rrt_star_planner, transform_left_arm, transform_right_arm, ur_params_left, ur_params_right)
+            left_arm_start, right_arm_start = self.plan_single_cube_passing(i, self.cubes, left_arm_start, right_arm_start, env, bb, rrt_star_planner, transform_left_arm, transform_right_arm, ur_params_left, ur_params_right)
 
 
         t2 = time.time()

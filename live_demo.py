@@ -194,8 +194,8 @@ def visualize_conf_right(conf):
 def IK_experiment():
     exp1 = Experiment()
     left, right = exp1.plan_experiment(DEMO=True)
-    for conf in right:
-        visualize_conf_right(conf)
+    # for conf in right:
+    #     visualize_conf_right(conf)
 
 
 if __name__ == '__main__':
