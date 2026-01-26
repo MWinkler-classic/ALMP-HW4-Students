@@ -317,7 +317,76 @@ class Experiment:
 
         # move left arm to B (cube now attached to left gripper)
         description = "left_arm => [meeting point -> place down], right_arm static"
-        left_arm_end_conf = self.right_arm_home # TODO: find conf for placing the cube at B
+        
+        # Calculate Zone B position - try multiple candidate positions
+        zone_b_offset = env.cube_area_corner[LocationType.LEFT]
+        zone_b_size = 0.4  # 40cm x 40cm area
+        cube_side = 0.04
+        
+        # Debug: Print Zone B boundaries
+        print(f"\n=== ZONE B DEBUG INFO ===")
+        print(f"Zone B corner (bottom-left): {zone_b_offset}")
+        print(f"Zone B X range: [{zone_b_offset[0]:.3f}, {zone_b_offset[0] + zone_b_size:.3f}]")
+        print(f"Zone B Y range: [{zone_b_offset[1]:.3f}, {zone_b_offset[1] + zone_b_size:.3f}]")
+        print(f"=========================\n")
+        
+        # Try multiple candidate positions in Zone B
+        # Left arm is at approximately [0.712, 1.516, 0] based on debug output
+        # Zone B Y range is [1.588, 1.988], so we want Y closer to 1.588 (bottom of Zone B)
+        candidate_positions = [
+            # Bottom-right of Zone B (closest to left arm)
+            [zone_b_offset[0] + zone_b_size * 0.75, zone_b_offset[1] + zone_b_size * 0.1, cube_side / 2.0],
+            # Bottom-center
+            [zone_b_offset[0] + zone_b_size * 0.5, zone_b_offset[1] + zone_b_size * 0.1, cube_side / 2.0],
+            # Middle-right
+            [zone_b_offset[0] + zone_b_size * 0.75, zone_b_offset[1] + zone_b_size * 0.3, cube_side / 2.0],
+            # Middle-center
+            [zone_b_offset[0] + zone_b_size * 0.5, zone_b_offset[1] + zone_b_size * 0.3, cube_side / 2.0],
+            # Center
+            [zone_b_offset[0] + zone_b_size * 0.5, zone_b_offset[1] + zone_b_size * 0.5, cube_side / 2.0],
+        ]
+        
+        # Add lift height for approach (same as pickup)
+        PLACEMENT_LIFT_HEIGHT = 0.2
+        placement_rpy = [0, -np.pi/2, 0]  # Gripper pointing down
+        
+        bb_placement = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
+                                       ur_params=ur_params_left, transform=left_arm_transform)
+        update_environment(env, LocationType.LEFT, self.right_arm_meeting_conf, cubes_at_meeting)
+        
+        left_arm_end_conf = None
+        zone_b_coords = None
+        placement_coords = None
+        
+        # Try each candidate position
+        for i, candidate in enumerate(candidate_positions):
+            zone_b_coords = candidate
+            placement_coords = (np.array(zone_b_coords) + np.array([0, 0, PLACEMENT_LIFT_HEIGHT])).tolist()
+            
+            print(f"Trying Zone B position {i+1}/{len(candidate_positions)}: {placement_coords}")
+            
+            # Get transformation matrix for this candidate
+            transformation_matrix_placement = left_arm_transform.get_base_to_tool_transform(
+                position=placement_coords,
+                rpy=placement_rpy)
+            
+            # Calculate IK solutions
+            possible_placement_confs = inverse_kinematics.inverse_kinematic_solution(
+                inverse_kinematics.DH_matrix_UR5e,
+                transformation_matrix_placement)
+            
+            # Try to find valid configuration
+            left_arm_end_conf = self.select_best_valid_ik_solution(
+                possible_placement_confs, bb_placement, ur_params_left, self.left_arm_meeting_conf)
+            
+            if left_arm_end_conf is not None:
+                print(f"✓ Successfully found valid placement at position {i+1}")
+                print(f"  Zone B placement coords: {zone_b_coords}")
+                print(f"  Zone B approach coords (with lift): {placement_coords}")
+                break
+        
+        if left_arm_end_conf is None:
+            raise ValueError(f"No valid configuration found for any Zone B placement position. Tried {len(candidate_positions)} positions.")
         
         # IMPORTANT: Cube is still at meeting point during planning!
         # Plan with cube at current (meeting) position, not final position
