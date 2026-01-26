@@ -153,9 +153,10 @@ class Experiment:
         ur_params_left = UR5e_without_camera_PARAMS(inflation_factor=1.0)
 
         env = Environment(ur_params=ur_params_right)
-
-        transform_right_arm = Transform(ur_params=ur_params_right, ur_location=env.arm_base_location[LocationType.RIGHT])
-        transform_left_arm = Transform(ur_params=ur_params_left, ur_location=env.arm_base_location[LocationType.LEFT])
+        right_arm_rotation = [0, 0, -np.pi/2] 
+        left_arm_rotation = [0, 0, np.pi/2]
+        transform_right_arm = Transform(ur_params=ur_params_right, ur_location=env.arm_base_location[LocationType.RIGHT],ur_rotation=right_arm_rotation)
+        transform_left_arm = Transform(ur_params=ur_params_left, ur_location=env.arm_base_location[LocationType.LEFT],ur_rotation=left_arm_rotation)
 
         env.arm_transforms[LocationType.RIGHT] = transform_right_arm
         env.arm_transforms[LocationType.LEFT] = transform_left_arm
