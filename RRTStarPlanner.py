@@ -74,7 +74,7 @@ class RRTStarPlanner(RRTMotionPlanner):
                         old = self.tree.get_cost(v_id)
                         self.tree.update_subtree(v_id, new_id, edge_cost)
                         new = self.tree.get_cost(v_id)
-                        print("rewire", v_id, "old", old, "new", new)
+                        #print("rewire", v_id, "old", old, "new", new)
         return new_id
 
     def plan(self):

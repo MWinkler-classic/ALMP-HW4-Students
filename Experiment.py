@@ -91,22 +91,16 @@ class Experiment:
         print(f"  Checking {len(ik_solutions)} IK solutions...")
         
         for i, conf in enumerate(ik_solutions):
-            print(f"    Solution {i}: conf = {np.rad2deg(conf).round(2)}")
             
             # Check joint limits
             within_limits = all(limits[j][0] <= angle <= limits[j][1] 
                                for j, angle in enumerate(conf))
             if not within_limits:
-                print(f"      REJECTED: Joint limits violated")
-                violated_joints = [j for j, angle in enumerate(conf) 
-                                  if not (limits[j][0] <= angle <= limits[j][1])]
-                print(f"      Violated joints: {violated_joints}")
                 continue
             
             # Check collision
             is_collision_free = bb.config_validity_checker(conf)
             if not is_collision_free:
-                print(f"      REJECTED: Configuration collision")
                 continue
             
             # Check edge validity from start if provided
@@ -114,7 +108,6 @@ class Experiment:
             if start_conf is not None:
                 edge_valid = bb.edge_validity_checker(start_conf, conf)
                 if not edge_valid:
-                    print(f"      REJECTED: Edge collision from start to goal")
                     continue
             
             # Calculate cost (distance from start if provided, otherwise just joint sum)
@@ -123,11 +116,9 @@ class Experiment:
             else:
                 cost = np.sum(np.abs(conf))  # Prefer solutions with smaller joint angles
             
-            print(f"      VALID: cost = {cost:.4f}")
             valid_solutions.append((i, conf, cost))
         
         if not valid_solutions:
-            print(f"  NO valid solutions found out of {len(ik_solutions)} candidates")
             return None
         
         # Sort by cost and return the best one
@@ -410,8 +401,8 @@ class Experiment:
         base_meeting_coords = [((1-right_x_bias)*left_arm[0] + right_x_bias*right_arm[0]),
                                ((1-right_y_bias)*left_arm[1] + right_y_bias*right_arm[1]),
                                0.5]  # Increased Z from 0.35 to 0.5 to avoid collisions
-        left_meeting_coords = (np.array(base_meeting_coords) + np.array([tool_len/2, -tool_len/2, 0])).tolist()
-        right_meeting_coords = (np.array(base_meeting_coords) - np.array([tool_len/2, -tool_len/2, 0])).tolist()
+        left_meeting_coords = (np.array(base_meeting_coords) + np.array([tool_len/2, 0, 0])).tolist() #check y should be 0 ?
+        right_meeting_coords = (np.array(base_meeting_coords) - np.array([tool_len/2, 0, 0])).tolist()
 
         print(f"DEBUG: Meeting point coords - base: {base_meeting_coords}, left: {left_meeting_coords}, right: {right_meeting_coords}")
 
