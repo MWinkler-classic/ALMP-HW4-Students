@@ -19,7 +19,8 @@ class RRTStarPlanner(RRTMotionPlanner):
         goal_prob=0.1,
         visualizer=None,
         max_plan_time=250.0,
-        k_mult=10
+        k_mult=10,
+        goal_configs = []
     ):
         # Initialize base class (sets bb, tree, start, goal, ext_mode, goal_prob, visualizer)
         super().__init__(bb, ext_mode, goal_prob, start, goal, visualizer)
@@ -31,6 +32,7 @@ class RRTStarPlanner(RRTMotionPlanner):
         self.max_step_size = max_step_size
         self.max_plan_time = max_plan_time
         self.k_mult = k_mult
+        self.goal_configs = goal_configs
 
     def dist(self, config1, config2):
         return self.bb.compute_distance(config1, config2)
@@ -86,39 +88,57 @@ class RRTStarPlanner(RRTMotionPlanner):
         root_id = self.tree.add_vertex(np.asarray(self.start, dtype=float))
         avg_time_secs = 50.0 # TODO: set the time we got from earlier parts (50.0?)
         max_time_secs = 5.0 * avg_time_secs
-        goal_id = None
+        goal_ids = []
         iteration = 0
         start_time = time.time()
+        goal_configs = list(self.goal_configs)
 
         # run until time budget expires
         print("begin planning")
-        print("planning params: max_step_size =", self.max_step_size, ", max_itr =", self.max_itr, ", stop_on_goal =", self.stop_on_goal, ", k =", self.k,
-            ", goal_prob =", self.goal_prob)
-        while (time.time() - start_time) < max_time_secs and (
-                not (self.max_itr is not None and iteration > self.max_itr)):
+        print("start conf = " + str(self.start), ", goal confs = " + str(goal_configs))
+        while ((time.time() - start_time) < max_time_secs and (
+                not (self.max_itr is not None and iteration > self.max_itr))
+                ):
+                # ) or (len(goal_ids) == 0):
             iteration += 1
             if iteration % 100 == 0:
                 print("RRT* iteration:", iteration, ", time elapsed (s):", round(time.time() - start_time, 2))
-            rand_config = self.bb.sample_random_config(self.goal_prob, self.goal)
-            # print("rand config: ", rand_config)
-            near_id, near_config = self.tree.get_nearest_config(rand_config)
-            new_config = self.extend(near_config, rand_config)
-            new_id = self.add_node(near_id, near_config, new_config)
-            if (new_config == np.asarray(self.goal, dtype=float)).all():
-                goal_id = new_id
-                print("goal id = " + str(goal_id))
-                if self.stop_on_goal:
-                    break
+                print("remaining goals: ", goal_configs)
+            rand_configs = self.bb.sample_random_configs(self.goal_prob, goal_configs)
+            if len(rand_configs) > 1:
+                print("sampled goals. num gaols: ", len(rand_configs))
+            for rand_config in rand_configs:
+                # print("rand config: ", rand_config)
+                near_id, near_config = self.tree.get_nearest_config(rand_config)
+                new_config = self.extend(near_config, rand_config)
+                new_id = self.add_node(near_id, near_config, new_config)
+                if new_id is not None and len(rand_configs) > 1:
+                    print("added new node id in direction of goal =", new_id, ", config =", new_config)
+                if new_id is not None and any(np.array_equal(new_config, g) for g in goal_configs):
+                    goal_ids.append(new_id)
+                    # remove found goal to avoid duplicates
+                    goal_configs = [g for g in goal_configs if not np.array_equal(new_config, g)]
+                    print("goal ids = " + str(goal_ids))
+                    if self.stop_on_goal:
+                        break
 
-            # if self.visualizer is not None and iteration % 5 == 0:
-            #     self.visualizer.visualize_sampling(rand_config, near_config, new_config, self.tree, self.start, self.goal)
+                # if self.visualizer is not None and iteration % 5 == 0:
+                #     self.visualizer.visualize_sampling(rand_config, near_config, new_config, self.tree, self.start, self.goal)
 
-        print("finished planning. goal_id =", goal_id)
-        if goal_id is None:
-            return (np.array([], dtype=float), np.inf)
+        print("finished planning. goal_ids =", goal_ids)
+        if goal_ids is None:
+            return [np.array([], dtype=float), np.inf]
 
-        path = self.reconstruct_path(goal_id)
-        return (np.array(path, dtype=float), self.compute_cost(path))
+        best_cost = np.inf
+        best_id = None
+        for goal_id in goal_ids:
+            cost = self.tree.get_cost(goal_id)
+            if cost < best_cost:
+                best_id, best_cost = goal_id, cost
+
+        path = self.reconstruct_path(best_id)
+
+        return np.array(path, dtype=float), best_cost, self.tree.get_config_for_id(best_id)
 
     def compute_cost(self, plan):
         # HW3 3
@@ -195,8 +215,8 @@ class RRTStarPlanner(RRTMotionPlanner):
         path = self.reconstruct_path(goal_id)
         return np.array(path, dtype=float), np.array(iters), np.array(costs), np.array(success)
 
-    def find_path(self, start_conf, goal_conf, manipulator=None):
+    def find_path(self, start_conf, goal_confs, manipulator=None):
         # TODO: use manipulator somehow. idk why it is provided here.
         self.start = start_conf
-        self.goal = goal_conf
+        self.goal_configs = goal_confs
         return self.plan()

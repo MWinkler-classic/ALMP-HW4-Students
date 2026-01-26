@@ -121,6 +121,7 @@ def animation(plan_file):
     dir_path = ""
     visualizer.show_all_experiment(dir_path + plan_file)
     visualizer.animate_by_pngs()
+
 def IK():
     ur_params_right = UR5e_PARAMS(inflation_factor=1.0)
     ur_params_left = UR5e_without_camera_PARAMS(inflation_factor=1.0)
@@ -146,6 +147,56 @@ def IK():
     valid_conf = bb_right.validate_IK_solutions(IK_configurations,transformation_matrix_base_to_tool)
     visualizer.draw_two_robots(conf_left=home_config,conf_right=valid_conf[0])
     print("visualized IK solution:",valid_conf[0])
+#     now do the same for the confs: [array([ 2.96593145e+00, -2.82992828e+00,  0.00000000e+00,  2.82992828e+00,
+#         6.09736961e-01,  8.76591808e-17]), array([ 2.96593145e+00, -2.82992828e+00, -0.00000000e+00,  2.82992828e+00,
+#         6.09736961e-01,  8.76591808e-17]), array([ 2.96593145e+00, -2.86626543e+00,  0.00000000e+00,  2.86626543e+00,
+#        -6.09736961e-01,  8.76591808e-17]), array([ 2.96593145e+00, -2.86626543e+00, -0.00000000e+00,  2.86626543e+00,
+#        -6.09736961e-01,  8.76591808e-17])]
+#     confs = [np.array([ 2.96593145e+00, -2.82992828e+00,  0.00000000e+00,  2.82992828e+00,
+#         6.09736961e-01,  8.76591808e-17]), np.array([ 2.96593145e+00, -2.82992828e+00, -0.00000000e+00,  2.82992828e+00,
+#         6.09736961e-01,  8.76591808e-17]), np.array([ 2.96593145e+00, -2.86626543e+00,  0.00000000e+00,  2.86626543e+00,
+#        -6.09736961e-01,  8.76591808e-17]), np.array([ 2.96593145e+00, -2.86626543e+00, -0.00000000e+00,  2.86626543e+00,
+#        -6.09736961e-01,  8.76591808e-17])]
+#
+#     for conf in confs:
+#         # valid_conf = bb_right.validate_IK_solutions([conf],transformation_matrix_base_to_tool)
+#         # if valid_conf:
+#         visualizer = Visualize_UR(ur_params_right, env=env, transform_right_arm=transform_right_arm,
+#                                   transform_left_arm=transform_left_arm)
+#         visualizer.draw_two_robots(conf_left=home_config,conf_right=conf)
+#         print("visualized IK solution:",conf)
+#         time.sleep(2)
+
+def visualize_conf_right(conf):
+    ur_params_right = UR5e_PARAMS(inflation_factor=1.0)
+    ur_params_left = UR5e_without_camera_PARAMS(inflation_factor=1.0)
+    env = Environment(ur_params=ur_params_right)
+    right_arm_rotation = [0, 0, -np.pi / 2]
+    left_arm_rotation = [0, 0, np.pi / 2]
+    transform_right_arm = Transform(ur_params=ur_params_right, ur_location=env.arm_base_location[LocationType.RIGHT],
+                                    ur_rotation=right_arm_rotation)
+    transform_left_arm = Transform(ur_params=ur_params_left, ur_location=env.arm_base_location[LocationType.LEFT],
+                                   ur_rotation=left_arm_rotation)
+    visualizer = Visualize_UR(ur_params_right, env=env, transform_right_arm=transform_right_arm,
+                              transform_left_arm=transform_left_arm)
+    bb_right = BuildingBlocks3D(transform=transform_right_arm, ur_params=ur_params_right, env=env,
+                                resolution=0.1)
+    home_config = [0, -pi / 2, 0, -pi / 2, 0, 0]
+    env.arm_transforms[LocationType.RIGHT] = transform_right_arm
+    env.arm_transforms[LocationType.LEFT] = transform_left_arm
+    update_environment(env, LocationType.RIGHT, home_config, [])
+
+    visualizer = Visualize_UR(ur_params_right, env=env, transform_right_arm=transform_right_arm,
+                              transform_left_arm=transform_left_arm)
+    visualizer.draw_two_robots(conf_left=home_config, conf_right=conf)
+
+
+def IK_experiment():
+    exp1 = Experiment()
+    left, right = exp1.plan_experiment(DEMO=True)
+    for conf in right:
+        visualize_conf_right(conf)
+
 
 if __name__ == '__main__':
     # draw_two_robots()
@@ -154,5 +205,6 @@ if __name__ == '__main__':
     create_json()
     # animation("plan_fixed.json")
     # IK()
+    # IK_experiment()
     
     

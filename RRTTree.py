@@ -170,6 +170,9 @@ class RRTTree(object):
         self.add_edge(new_parent_id, v_id, edge_cost=edge_cost)
         self.update_subtree_cost_recursive(v_id)
 
+    def get_config_for_id(self, id):
+        return self.vertices[id].config
+
 class RRTVertex(object):
 
     def __init__(self, config, cost=0, inspected_points=None):

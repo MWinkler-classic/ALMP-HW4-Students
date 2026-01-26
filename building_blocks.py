@@ -31,7 +31,10 @@ class BuildingBlocks3D(object):
             ["forearm_link", "wrist_3_link"],
         ]
 
-    def sample_random_config(self, goal_prob,  goal_conf) -> np.array:
+    def sample_random_config(self):
+        pass
+
+    def sample_random_configs(self, goal_prob,  goal_confs) -> list[np.array]:
         """
         sample random configuration
         @param goal_conf - the goal configuration
@@ -40,13 +43,10 @@ class BuildingBlocks3D(object):
         # HW2 5.2.1
         uni_sample = np.random.uniform(low=0.0, high=1.0, size=None)
         if uni_sample <= goal_prob:
-            # return goal_conf
-            # print("returning goal conf")
-            # print("goal conf: ", goal_conf)
-            return goal_conf
+            return goal_confs
         else:
             rand = np.random.uniform(low=-self.single_mechanical_limit, high=self.single_mechanical_limit, size=6)
-            return rand
+            return [rand]
 
     def _convert_to_3d_spheres(self, link_spheres):
         new_spheres = []
