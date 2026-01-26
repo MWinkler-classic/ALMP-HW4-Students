@@ -76,7 +76,7 @@ class RRTStarPlanner(RRTMotionPlanner):
                         old = self.tree.get_cost(v_id)
                         self.tree.update_subtree(v_id, new_id, edge_cost)
                         new = self.tree.get_cost(v_id)
-                        print("rewire", v_id, "old", old, "new", new)
+                        #print("rewire", v_id, "old", old, "new", new)
         return new_id
 
     def plan(self):
@@ -95,11 +95,32 @@ class RRTStarPlanner(RRTMotionPlanner):
 
         # run until time budget expires
         print("begin planning")
-        print("start conf = " + str(self.start), ", goal confs = " + str(goal_configs))
-        while ((time.time() - start_time) < max_time_secs and (
-                not (self.max_itr is not None and iteration > self.max_itr))
-                ):
-                # ) or (len(goal_ids) == 0):
+        print("planning params: max_step_size =", self.max_step_size, ", max_itr =", self.max_itr, ", stop_on_goal =", self.stop_on_goal, ", k =", self.k,
+            ", goal_prob =", self.goal_prob)
+        print(" start config (joint conf):", self.start)
+        print(" trying to reach goal (joint conf):", self.goal)
+
+        # Convert start and goal configurations to x,y,z positions
+        try:
+            start_transform_matrix = self.bb.transform.get_trans_matrix(self.start)
+            start_ee_base = start_transform_matrix['wrist_3_link'][:3, 3]
+            start_ee_homogeneous = np.array([start_ee_base[0], start_ee_base[1], start_ee_base[2], 1.0])
+            start_ee_world = np.matmul(self.bb.transform.base_transform, start_ee_homogeneous)
+            print(f" start end-effector position (x,y,z): [{start_ee_world[0]:.4f}, {start_ee_world[1]:.4f}, {start_ee_world[2]:.4f}]")
+
+            goal_transform_matrix = self.bb.transform.get_trans_matrix(self.goal)
+            goal_ee_base = goal_transform_matrix['wrist_3_link'][:3, 3]
+            goal_ee_homogeneous = np.array([goal_ee_base[0], goal_ee_base[1], goal_ee_base[2], 1.0])
+            goal_ee_world = np.matmul(self.bb.transform.base_transform, goal_ee_homogeneous)
+            print(f" goal end-effector position (x,y,z): [{goal_ee_world[0]:.4f}, {goal_ee_world[1]:.4f}, {goal_ee_world[2]:.4f}]")
+
+            distance_xyz = np.linalg.norm(goal_ee_world[:3] - start_ee_world[:3])
+            print(f" cartesian distance start->goal: {distance_xyz:.4f} meters")
+        except Exception as e:
+            print(f" (could not compute x,y,z positions: {e})")
+
+        while (time.time() - start_time) < max_time_secs and (
+                not (self.max_itr is not None and iteration > self.max_itr)):
             iteration += 1
             if iteration % 100 == 0:
                 print("RRT* iteration:", iteration, ", time elapsed (s):", round(time.time() - start_time, 2))
