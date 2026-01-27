@@ -98,26 +98,7 @@ class RRTStarPlanner(RRTMotionPlanner):
         print("planning params: max_step_size =", self.max_step_size, ", max_itr =", self.max_itr, ", stop_on_goal =", self.stop_on_goal, ", k =", self.k,
             ", goal_prob =", self.goal_prob)
         print(" start config (joint conf):", self.start)
-        print(" trying to reach goal (joint conf):", self.goal)
-
-        # Convert start and goal configurations to x,y,z positions
-        try:
-            start_transform_matrix = self.bb.transform.get_trans_matrix(self.start)
-            start_ee_base = start_transform_matrix['wrist_3_link'][:3, 3]
-            start_ee_homogeneous = np.array([start_ee_base[0], start_ee_base[1], start_ee_base[2], 1.0])
-            start_ee_world = np.matmul(self.bb.transform.base_transform, start_ee_homogeneous)
-            print(f" start end-effector position (x,y,z): [{start_ee_world[0]:.4f}, {start_ee_world[1]:.4f}, {start_ee_world[2]:.4f}]")
-
-            goal_transform_matrix = self.bb.transform.get_trans_matrix(self.goal)
-            goal_ee_base = goal_transform_matrix['wrist_3_link'][:3, 3]
-            goal_ee_homogeneous = np.array([goal_ee_base[0], goal_ee_base[1], goal_ee_base[2], 1.0])
-            goal_ee_world = np.matmul(self.bb.transform.base_transform, goal_ee_homogeneous)
-            print(f" goal end-effector position (x,y,z): [{goal_ee_world[0]:.4f}, {goal_ee_world[1]:.4f}, {goal_ee_world[2]:.4f}]")
-
-            distance_xyz = np.linalg.norm(goal_ee_world[:3] - start_ee_world[:3])
-            print(f" cartesian distance start->goal: {distance_xyz:.4f} meters")
-        except Exception as e:
-            print(f" (could not compute x,y,z positions: {e})")
+        print("goal configs = ", goal_configs)
 
         while (time.time() - start_time) < max_time_secs and (
                 not (self.max_itr is not None and iteration > self.max_itr)):
@@ -146,7 +127,7 @@ class RRTStarPlanner(RRTMotionPlanner):
                 # if self.visualizer is not None and iteration % 5 == 0:
                 #     self.visualizer.visualize_sampling(rand_config, near_config, new_config, self.tree, self.start, self.goal)
 
-        print("finished planning. goal_ids =", goal_ids)
+        print("finished planning. goal_ids =", goal_ids, "total nodes in tree =", len(self.tree.vertices))
         if goal_ids is None:
             return [np.array([], dtype=float), np.inf]
 
@@ -156,6 +137,8 @@ class RRTStarPlanner(RRTMotionPlanner):
             cost = self.tree.get_cost(goal_id)
             if cost < best_cost:
                 best_id, best_cost = goal_id, cost
+
+
 
         path = self.reconstruct_path(best_id)
 

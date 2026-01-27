@@ -160,13 +160,13 @@ class Experiment:
         right_arm = env.arm_base_location[LocationType.RIGHT]
         tool_len = inverse_kinematics.tool_length
 
-        LIFT_HEIGHT = 0.2  # TODO: find correct Z value using simulations
+        LIFT_HEIGHT = 0.4  # TODO: find correct Z value using simulations
         pickup_coords = (np.array(cube_coords) + np.array([0, 0, LIFT_HEIGHT])).tolist()
 
         # RPY for pickup: Account for right arm base rotation of -90° around Z
         # [roll, pitch, yaw] where yaw compensates for base rotation
         # TODO: return to [0, -np.pi/2, -np.pi/2] and debug why couldnt find confs for that
-        pickup_rpy = [0, -np.pi/2, 0] # [0, -np.pi/2, -np.pi/2]  # Adjusted for base rotation # TODO: find correct orientation using simulations
+        pickup_rpy = [0, np.pi, np.pi] # [0, -np.pi/2, -np.pi/2]  # Adjusted for base rotation # TODO: find correct orientation using simulations
 
         transformation_matrix_base_to_tool = right_arm_transform.get_base_to_tool_transform(
             position=pickup_coords,
@@ -203,10 +203,11 @@ class Experiment:
         print("finished part 2, starting part 3")
 
         # move right arm to meeting point (cube is now attached to right gripper)
+        cubes_for_collision = [c for j, c in enumerate(cubes_after_pickup) if j != cube_i]
         description = "right_arm => [cube pickup -> meeting point], left_arm static"
         # TODO: start conf correct? cube conf or maybe it is updated after the movel they provided?
         right_meeting_point_conf = self.plan_single_arm(planner, cube_conf, self.right_arm_meeting_confs, description,
-                                                        active_arm, "move", left_arm_start, cubes_after_pickup,
+                                                        active_arm, "move", left_arm_start, cubes_for_collision,
                                                         Gripper.STAY, Gripper.STAY,
                                                         env, ur_params_right, right_arm_transform)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
