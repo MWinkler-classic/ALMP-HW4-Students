@@ -206,7 +206,9 @@ class Experiment:
         LIFT_HEIGHT = 0.2  # TODO: find correct Z value using simulations
         pickup_coords = (np.array(cube_coords) + np.array([0, 0, LIFT_HEIGHT])).tolist()
 
-        pickup_rpy = [0, -np.pi/2, 0] # TODO: find correct orientation using simulations
+        # RPY for pickup: Account for right arm base rotation of -90° around Z
+        # [roll, pitch, yaw] where yaw compensates for base rotation
+        pickup_rpy = [0, -np.pi/2, -np.pi/2]  # Adjusted for base rotation # TODO: find correct orientation using simulations
 
         transformation_matrix_base_to_tool = right_arm_transform.get_base_to_tool_transform(
             position=pickup_coords,
@@ -305,7 +307,8 @@ class Experiment:
         
         # Add lift height for approach (same as pickup)
         PLACEMENT_LIFT_HEIGHT = 0.2
-        placement_rpy = [0, -np.pi/2, 0]  # Gripper pointing down
+        # RPY for placement: Account for left arm base rotation of +90° around Z
+        placement_rpy = [0, -np.pi/2, np.pi/2]  # Adjusted for base rotation # TODO Find correct orientation using simulations
         
         bb_placement = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
                                        ur_params=ur_params_left, transform=left_arm_transform)
