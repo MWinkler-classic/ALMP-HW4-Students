@@ -194,6 +194,7 @@ class Experiment:
 
         # Calculate where the cube will be after picking up (at gripper position after going down)
         # The movel command moves down 0.14, so cube will be at that new position
+        
         cube_after_pickup_pos = self.get_end_effector_position(cube_conf, right_arm_transform)
         cube_after_pickup_pos[2] += CUBE_PICKUP_CONST  # Account for the down movement
         cubes_after_pickup = self.update_cube_position(cubes, cube_i, cube_after_pickup_pos)
@@ -231,13 +232,13 @@ class Experiment:
         active_arm = LocationType.LEFT
         left_meeting_point_conf = self.plan_single_arm(planner, left_arm_start, self.left_arm_meeting_confs, description, active_arm, "move",
                              right_meeting_point_conf, cubes_at_meeting, Gripper.STAY, Gripper.STAY, env, ur_params_left, left_arm_transform)  # gripper_pre: stay open, gripper_post: stay open
-
+        moving_back = 0.11
         # Transfer cube from right arm to left arm (cube stays at same position during transfer)
         self.push_step_info_into_single_cube_passing_data("transferring cube: left closes to grab",
                                                           LocationType.LEFT,
                                                           "movel",
                                                           list(right_meeting_point_conf),
-                                                          [-0.05, 0, 0],  # No movement, just gripper action
+                                                          [0, -moving_back, 0],  # No movement, just gripper action
                                                           cubes_at_meeting,  # Cube still at meeting point
                                                           Gripper.STAY,  # gripper_pre: stay open
                                                           Gripper.CLOSE)  # gripper_post: close to grab cube
@@ -253,11 +254,11 @@ class Experiment:
                                                           Gripper.OPEN)  # gripper_post: open to release
         
         # Right arm lifts back up to avoid collision
-        self.push_step_info_into_single_cube_passing_data("transferring cube: right arm lift back up",
-                                                          LocationType.RIGHT,
+        self.push_step_info_into_single_cube_passing_data("transferring cube: left back up",
+                                                          LocationType.LEFT,
                                                           "movel",
-                                                          list(left_meeting_point_conf),
-                                                          [0.05, 0, 0],  # Lift back up
+                                                          list(right_meeting_point_conf),
+                                                          [0, moving_back, 0],  # Lift back up
                                                           cubes_at_meeting,  # Cube still at meeting point
                                                           Gripper.STAY,  # gripper_pre: stay open
                                                           Gripper.STAY)  # gripper_post: stay open

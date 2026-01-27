@@ -100,6 +100,8 @@ def run_json(json_path):
                     elif step["command"][i] == "movel":
                         relative_pose = step["path"][i]
                         robot.moveL_relative(relative_pose)
+                        # Wait for moveL to complete before proceeding
+                        time.sleep(1.0)
                     # lastly, check gripper post status
                     robot.gripper_action(robot.active_robot, step["gripper_post"][i])
     robot.close_connection()
@@ -201,8 +203,8 @@ def IK_experiment():
 if __name__ == '__main__':
     # draw_two_robots()
     # connect_move_robots()
-    #run_json("plan_fixed.json")
-    create_json()
+    run_json("outputs/plan.json")
+    #create_json()
     # animation("plan_fixed.json")
     # IK()
     # IK_experiment()
