@@ -37,6 +37,32 @@ class RRTMotionPlanner(object):
                 break
             curr = self.tree.edges[curr]
         path.reverse()
+
+        old_cost = self.compute_cost(path) # TODO: remove
+        # compress path (iteratively remove unnecessary middle waypoints)
+        while True:
+            num_compressed = 0
+            i = 0
+            # try to shortcut triples (i, i+1, i+2) -> (i, i+2)
+            while i <= len(path) - 3:
+                if self.bb.edge_validity_checker(path[i], path[i + 2]):
+                    print("compressed path. old edges cost = ",
+                          self.bb.compute_distance(path[i], path[i + 1]) +
+                            self.bb.compute_distance(path[i + 1], path[i + 2]),
+                          "new edges cost = ",
+                          self.bb.compute_distance(path[i], path[i + 1]))
+                    path.pop(i + 1)  # remove middle node
+                    num_compressed += 1
+                    # don't increment i: we may be able to shortcut further with the new neighbor
+                else:
+                    i += 1
+
+            if num_compressed == 0:
+                break
+        new_cost = self.compute_cost(path) # TODO: remove
+        print("finished path compression path. old cost = ", old_cost, "new cost = ", new_cost)
+
+
         return path
 
     def plan(self):

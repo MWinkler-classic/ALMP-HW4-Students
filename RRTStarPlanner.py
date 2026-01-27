@@ -49,6 +49,8 @@ class RRTStarPlanner(RRTMotionPlanner):
             return None
 
         parent_id, parent_config = near_id, near_config
+
+        # TODO: remove this chunk if want computing speed over path quality. barely any change in path quality but may make some weird movements
         new_config_cost = self.tree.get_cost(near_id) + self.dist(near_config, new_config)
         k = self.k_mult * int(np.ceil(np.log(max(len(self.tree.vertices), 2))))
         k = min(k, len(self.tree.vertices)-1)
@@ -60,23 +62,24 @@ class RRTStarPlanner(RRTMotionPlanner):
                     new_config_cost = better_cost
                     parent_id, parent_config = v_id, v_config
 
+
         # add node to tree with best parent
         new_id = self.tree.add_vertex(new_config)
         edge_cost = self.dist(parent_config, new_config)
         self.tree.add_edge(parent_id, new_id, edge_cost=edge_cost)
 
-        if k >= 3: # make node parent of other nodes (RRT* improvement phase)
-            for v_id, v_config in zip(knn_ids, knn_configs):
-                edge_cost = self.dist(new_config, v_config)
-                better_cost = new_config_cost + edge_cost
-                if (better_cost < self.tree.get_cost(v_id)):
-                    # print("better cost")
-                    if self.bb.edge_validity_checker(new_config, v_config):
-                        # improve tree by replacing the edge to v with a new edge.
-                        old = self.tree.get_cost(v_id)
-                        self.tree.update_subtree(v_id, new_id, edge_cost)
-                        new = self.tree.get_cost(v_id)
-                        #print("rewire", v_id, "old", old, "new", new)
+        # if k >= 3: # make node parent of other nodes (RRT* improvement phase)
+        #     for v_id, v_config in zip(knn_ids, knn_configs):
+        #         edge_cost = self.dist(new_config, v_config)
+        #         better_cost = new_config_cost + edge_cost
+        #         if (better_cost < self.tree.get_cost(v_id)):
+        #             # print("better cost")
+        #             if self.bb.edge_validity_checker(new_config, v_config):
+        #                 # improve tree by replacing the edge to v with a new edge.
+        #                 old = self.tree.get_cost(v_id)
+        #                 self.tree.update_subtree(v_id, new_id, edge_cost)
+        #                 new = self.tree.get_cost(v_id)
+        #                 #print("rewire", v_id, "old", old, "new", new)
         return new_id
 
     def plan(self):
@@ -107,15 +110,15 @@ class RRTStarPlanner(RRTMotionPlanner):
                 print("RRT* iteration:", iteration, ", time elapsed (s):", round(time.time() - start_time, 2))
                 print("remaining goals: ", goal_configs)
             rand_configs = self.bb.sample_random_configs(self.goal_prob, goal_configs)
-            if len(rand_configs) > 1:
-                print("sampled goals. num gaols: ", len(rand_configs))
+            # if len(rand_configs) > 1:
+                # print("sampled goals. num gaols: ", len(rand_configs))
             for rand_config in rand_configs:
                 # print("rand config: ", rand_config)
                 near_id, near_config = self.tree.get_nearest_config(rand_config)
                 new_config = self.extend(near_config, rand_config)
                 new_id = self.add_node(near_id, near_config, new_config)
-                if new_id is not None and len(rand_configs) > 1:
-                    print("added new node id in direction of goal =", new_id, ", config =", new_config)
+                # if new_id is not None and len(rand_configs) > 1:
+                    # print("added new node id in direction of goal =", new_id, ", config =", new_config)
                 if new_id is not None and any(np.array_equal(new_config, g) for g in goal_configs):
                     goal_ids.append(new_id)
                     # remove found goal to avoid duplicates
@@ -141,8 +144,9 @@ class RRTStarPlanner(RRTMotionPlanner):
 
 
         path = self.reconstruct_path(best_id)
+        path_cost = self.compute_cost(path) # needed to recompute because path changed in reconstruct
 
-        return np.array(path, dtype=float), best_cost, self.tree.get_config_for_id(best_id)
+        return np.array(path, dtype=float), path_cost, self.tree.get_config_for_id(best_id)
 
     def compute_cost(self, plan):
         # HW3 3
@@ -220,7 +224,6 @@ class RRTStarPlanner(RRTMotionPlanner):
         return np.array(path, dtype=float), np.array(iters), np.array(costs), np.array(success)
 
     def find_path(self, start_conf, goal_confs, manipulator=None):
-        # TODO: use manipulator somehow. idk why it is provided here.
         self.start = start_conf
         self.goal_configs = goal_confs
         return self.plan()
