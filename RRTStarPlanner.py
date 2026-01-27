@@ -19,7 +19,7 @@ class RRTStarPlanner(RRTMotionPlanner):
         goal_prob=0.1,
         visualizer=None,
         max_plan_time=250.0,
-        k_mult=10,
+        k_mult=1,
         goal_configs = []
     ):
         # Initialize base class (sets bb, tree, start, goal, ext_mode, goal_prob, visualizer)

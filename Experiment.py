@@ -69,49 +69,6 @@ class Experiment:
         self.experiment_result[-1]["gripper_pre"].append(gripper_pre)
         self.experiment_result[-1]["gripper_post"].append(gripper_post)
 
-    def select_valid_ik_solutions(self, ik_solutions, bb, ur_params, start_conf=None):
-        """
-        Select only valid IK solutions from multiple solutions.
-
-        Args:
-            ik_solutions: Array of IK solutions (8x6)
-            bb: BuildingBlocks3D object for collision checking
-            ur_params: Robot parameters for joint limits
-            start_conf: Optional start configuration to prefer solutions closer to it
-
-        Returns:
-            Best valid configuration, or None if no valid solution exists
-        """
-
-        limits = list(ur_params.mechamical_limits.values())
-        valid_solutions = []
-        
-        for i, conf in enumerate(ik_solutions):
-            # Check joint limits
-            # within_limits = all(limits[j][0] <= angle <= limits[j][1]
-            #                    for j, angle in enumerate(conf))
-            # if not within_limits:
-            #     print("not within limits")
-            #     continue
-
-            # Check collision
-            is_collision_free = bb.config_validity_checker(conf)
-            if not is_collision_free:
-                continue
-            
-            # Check edge validity from start if provided
-            # TODO: this checks only from start to conf, may get false collisions while a path is still possible
-            # if start_conf is not None:
-            #     edge_valid = bb.edge_validity_checker(start_conf, conf)
-            #     if not edge_valid:
-            #         continue
-            
-            valid_solutions.append(conf)
-
-        print("IK input: ", ik_solutions)
-        print("Valid IK solutions: ", valid_solutions)
-        return valid_solutions
-
     def get_end_effector_position(self, conf, transform):
         """
         Get the end effector position for a given configuration.
@@ -213,9 +170,8 @@ class Experiment:
             rpy=pickup_rpy)
 
         # TODO: passing correct ur params????
-        cube_approaches = self.select_valid_ik_solutions(inverse_kinematics.inverse_kinematic_solution(
-            inverse_kinematics.DH_matrix_UR5e, transformation_matrix_base_to_tool),
-            bb, env.ur_params, start_conf=right_arm_start)
+        cube_approaches = bb.validate_IK_solutions(inverse_kinematics.inverse_kinematic_solution(
+            inverse_kinematics.DH_matrix_UR5e, transformation_matrix_base_to_tool),transformation_matrix_base_to_tool)
 
         # plan the path
         print("cube approach confs: ", cube_approaches)
@@ -313,8 +269,6 @@ class Experiment:
         
         valid_placement_confs = []
         left_arm_end_confs = []
-        zone_b_coords = None
-        placement_coords = None
         
         # Try each candidate position
         for i, candidate in enumerate(candidate_positions):
@@ -332,10 +286,16 @@ class Experiment:
             possible_placement_confs = inverse_kinematics.inverse_kinematic_solution(
                 inverse_kinematics.DH_matrix_UR5e,
                 transformation_matrix_placement)
+
+            for conf in possible_placement_confs:
+                visualizer = Visualize_UR(ur_params_right, env=env, transform_right_arm=right_arm_transform,
+                                          transform_left_arm=left_arm_transform)
+                visualizer.draw_two_robots(conf_left=conf,
+                                           conf_right=right_meeting_point_conf)
             
             # Try to find valid configurations (returns list of valid configs)
-            valid_placement_confs = self.select_valid_ik_solutions(
-                possible_placement_confs, bb_placement, ur_params_left, start_conf=None)
+            valid_placement_confs =  bb_placement.validate_IK_solutions(
+                possible_placement_confs, transformation_matrix_placement)
             
             if len(valid_placement_confs) > 0:
                 print(f"✓ Successfully found {len(valid_placement_confs)} valid placement(s) at position {i+1}")
@@ -440,22 +400,21 @@ class Experiment:
         # Select best valid IK solutions
         print("Selecting best left arm meeting point configuration.")
         print("transform to r: ", transformation_matrix_base_to_tool_r)
-        print("IK r: ", inverse_kinematics.inverse_kinematic_solution(
-            inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_r))
+        ik_r = inverse_kinematics.inverse_kinematic_solution(
+            inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_r)
+        print("IK r: ", ik_r)
 
         bb_left = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
                                    ur_params=ur_params_left, transform=transform_left_arm)
         update_environment(env, LocationType.LEFT, self.right_arm_home, [])  # Set environment for left arm
-        self.left_arm_meeting_confs = self.select_valid_ik_solutions(inverse_kinematics.inverse_kinematic_solution(
-            inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_l),
-            bb_left, ur_params_left)
+        self.left_arm_meeting_confs = bb_left.validate_IK_solutions(inverse_kinematics.inverse_kinematic_solution(
+            inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_l), transformation_matrix_base_to_tool_l)
 
-        bb = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
+        bb_right = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
                                     ur_params=ur_params_right, transform=transform_right_arm)
         update_environment(env, LocationType.RIGHT, self.left_arm_home, [])  # Set environment for right arm
-        self.right_arm_meeting_confs = self.select_valid_ik_solutions(inverse_kinematics.inverse_kinematic_solution(
-            inverse_kinematics.DH_matrix_UR5e, transformation_matrix_base_to_tool_r),
-            bb, ur_params_right)  # No start_conf = no edge checking(?)
+        self.right_arm_meeting_confs = bb_right.validate_IK_solutions(inverse_kinematics.inverse_kinematic_solution(
+            inverse_kinematics.DH_matrix_UR5e, transformation_matrix_base_to_tool_r), transformation_matrix_base_to_tool_r)  # No start_conf = no edge checking(?)
 
         print("right confs: ", self.right_arm_meeting_confs)
 
@@ -469,8 +428,11 @@ class Experiment:
         print("right conf for meeting points: ", self.right_arm_meeting_confs)
 
         if DEMO:
-            visualizer.draw_two_robots(conf_left=self.left_arm_meeting_confs[0],
-                                       conf_right=self.right_arm_meeting_confs[0])
+            for conf in self.right_arm_meeting_confs:
+                visualizer = Visualize_UR(ur_params_right, env=env, transform_right_arm=transform_right_arm,
+                                          transform_left_arm=transform_left_arm)
+                visualizer.draw_two_robots(conf_left=self.left_arm_meeting_confs[0],
+                                           conf_right=conf)
             return [self.left_arm_meeting_confs, self.right_arm_meeting_confs]
 
         #################################END#############################################
@@ -480,7 +442,7 @@ class Experiment:
         left_arm_start = self.left_arm_home
         right_arm_start = self.right_arm_home
         for i in range(len(self.cubes)):
-            left_arm_start, right_arm_start = self.plan_single_cube_passing(i, self.cubes, left_arm_start, right_arm_start, env, bb, rrt_star_planner, transform_left_arm, transform_right_arm, ur_params_left, ur_params_right)
+            left_arm_start, right_arm_start = self.plan_single_cube_passing(i, self.cubes, left_arm_start, right_arm_start, env, bb_right, rrt_star_planner, transform_left_arm, transform_right_arm, ur_params_left, ur_params_right)
 
 
         t2 = time.time()
