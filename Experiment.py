@@ -187,14 +187,14 @@ class Experiment:
         cube_after_pickup_pos[2] -= 0.14  # Account for the down movement
         cubes_after_pickup = self.update_cube_position(cubes, cube_i, cube_after_pickup_pos)
         
-        self.push_step_info_into_single_cube_passing_data("picking up a cube: go down",
-                                                          LocationType.RIGHT,
-                                                          "movel",
-                                                          list(self.left_arm_home),
-                                                          [0, 0, -0.14],
-                                                          cubes_after_pickup,  # Cube is now at gripper position
-                                                          Gripper.STAY,  # gripper_pre: already open, stay open
-                                                          Gripper.CLOSE)  # gripper_post: close after reaching cube
+        # self.push_step_info_into_single_cube_passing_data("picking up a cube: go down",
+        #                                                   LocationType.RIGHT,
+        #                                                   "movel",
+        #                                                   list(self.left_arm_home),
+        #                                                   [0, 0, -0.14],
+        #                                                   cubes_after_pickup,  # Cube is now at gripper position
+        #                                                   Gripper.STAY,  # gripper_pre: already open, stay open
+        #                                                   Gripper.CLOSE)  # gripper_post: close after reaching cube
 
 
         # TODO 3
@@ -219,14 +219,14 @@ class Experiment:
                              right_meeting_point_conf, cubes_at_meeting, Gripper.STAY, Gripper.STAY, env, ur_params_left, left_arm_transform)  # gripper_pre: stay open, gripper_post: stay open
 
         # Transfer cube from right arm to left arm (cube stays at same position during transfer)
-        self.push_step_info_into_single_cube_passing_data("transferring cube: left closes to grab",
-                                                          LocationType.LEFT,
-                                                          "movel",
-                                                          list(right_meeting_point_conf),
-                                                          [0, 0, 0],  # No movement, just gripper action
-                                                          cubes_at_meeting,  # Cube still at meeting point
-                                                          Gripper.STAY,  # gripper_pre: stay open
-                                                          Gripper.CLOSE)  # gripper_post: close to grab cube
+        # self.push_step_info_into_single_cube_passing_data("transferring cube: left closes to grab",
+        #                                                   LocationType.LEFT,
+        #                                                   "movel",
+        #                                                   list(right_meeting_point_conf),
+        #                                                   [0, 0, 0],  # No movement, just gripper action
+        #                                                   cubes_at_meeting,  # Cube still at meeting point
+        #                                                   Gripper.STAY,  # gripper_pre: stay open
+        #                                                   Gripper.CLOSE)  # gripper_post: close to grab cube
 
         # move left arm to B (cube now attached to left gripper)
         description = "left_arm => [meeting point -> place down], right_arm static"
@@ -328,14 +328,14 @@ class Experiment:
         cube_final_pos[2] -= 0.14  # Cube goes down with gripper
         cubes_final = self.update_cube_position(cubes, cube_i, cube_final_pos)
 
-        self.push_step_info_into_single_cube_passing_data("placing down cube: go down and open gripper",
-                                                          LocationType.LEFT,
-                                                          "movel",
-                                                          list(right_meeting_point_conf),
-                                                          [0, 0, -0.14],
-                                                          cubes_final,  # Cube at final position
-                                                          Gripper.STAY,  # gripper_pre: stay closed
-                                                          Gripper.OPEN)   # gripper_post: open to release cube
+        # self.push_step_info_into_single_cube_passing_data("placing down cube: go down and open gripper",
+        #                                                   LocationType.LEFT,
+        #                                                   "movel",
+        #                                                   list(right_meeting_point_conf),
+        #                                                   [0, 0, -0.14],
+        #                                                   cubes_final,  # Cube at final position
+        #                                                   Gripper.STAY,  # gripper_pre: stay closed
+        #                                                   Gripper.OPEN)   # gripper_post: open to release cube
 
         return left_arm_end_conf, right_meeting_point_conf # return left and right end position, so it can be the start position for the next interation.
 
@@ -394,7 +394,7 @@ class Experiment:
         print(f"DEBUG: Meeting point coords - base: {base_meeting_coords}, left: {left_meeting_coords}, right: {right_meeting_coords}")
 
         left_meeting_rpy = [np.pi/2, 0, np.pi*1/2]  # TODO Validate via simulation
-        right_meeting_rpy = [np.pi/2, np.pi, -np.pi/2]
+        right_meeting_rpy = [np.pi/2, np.pi/2, -np.pi/2]
 
         transformation_matrix_base_to_tool_l = transform_left_arm.get_base_to_tool_transform(position=left_meeting_coords,
                                                                                             rpy=left_meeting_rpy)
