@@ -165,7 +165,8 @@ class Experiment:
 
         # RPY for pickup: Account for right arm base rotation of -90° around Z
         # [roll, pitch, yaw] where yaw compensates for base rotation
-        pickup_rpy = [0, -np.pi/2, -np.pi/2]  # Adjusted for base rotation # TODO: find correct orientation using simulations
+        # TODO: return to [0, -np.pi/2, -np.pi/2] and debug why couldnt find confs for that
+        pickup_rpy = [0, -np.pi/2, 0] # [0, -np.pi/2, -np.pi/2]  # Adjusted for base rotation # TODO: find correct orientation using simulations
 
         transformation_matrix_base_to_tool = right_arm_transform.get_base_to_tool_transform(
             position=pickup_coords,
@@ -290,15 +291,18 @@ class Experiment:
                 inverse_kinematics.DH_matrix_UR5e,
                 transformation_matrix_placement)
 
-            for conf in possible_placement_confs:
-                visualizer = Visualize_UR(ur_params_right, env=env, transform_right_arm=right_arm_transform,
-                                          transform_left_arm=left_arm_transform)
-                visualizer.draw_two_robots(conf_left=conf,
-                                           conf_right=right_meeting_point_conf)
-            
+            # for conf in possible_placement_confs:
+            #     visualizer = Visualize_UR(ur_params_right, env=env, transform_right_arm=right_arm_transform,
+            #                               transform_left_arm=left_arm_transform)
+            #     visualizer.draw_two_robots(conf_left=conf,
+            #                                conf_right=right_meeting_point_conf)
+            #
             # Try to find valid configurations (returns list of valid configs)
-            valid_placement_confs =  bb_placement.validate_IK_solutions(
-                possible_placement_confs, transformation_matrix_placement)
+            try:
+                valid_placement_confs =  bb_placement.validate_IK_solutions(
+                    possible_placement_confs, transformation_matrix_placement)
+            except ValueError as e:
+                continue
             
             if len(valid_placement_confs) > 0:
                 print(f"✓ Successfully found {len(valid_placement_confs)} valid placement(s) at position {i+1}")
