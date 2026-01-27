@@ -1,5 +1,6 @@
 import json
 import numpy as np
+import threading
 from environment import Environment, LocationType
 import inverse_kinematics
 from kinematics import UR5e_PARAMS, UR5e_without_camera_PARAMS, Transform
@@ -106,6 +107,141 @@ def run_json(json_path):
                     robot.gripper_action(robot.active_robot, step["gripper_post"][i])
     robot.close_connection()
 
+
+def run_json_parallel(json_path):
+    """
+    Run experiment with PARALLEL execution for steps marked with [PARALLEL-R] and [PARALLEL-L].
+    Both arms move SIMULTANEOUSLY using threads for those steps.
+    """
+    robot = BaseRobot(left_arm_ip, right_arm_ip)
+    home_config = [0, -pi / 2, 0, -pi / 2, 0, 0]
+    
+    print("Moving both arms to home position...")
+    robot.robot_left.move_home()
+    robot.robot_right.move_home()
+    time.sleep(2)
+    
+    def move_path_async(robot_arm, path):
+        """Move robot along path asynchronously (non-blocking)."""
+        speed = 0.5
+        acceleration = 0.5
+        blend_radius = 0.05
+        path_with_params = [[*config, speed, acceleration, blend_radius] for config in path]
+        path_with_params[-1][-1] = 0  # Last point should have 0 blend radius
+        robot_arm.moveJ(path_with_params, asynchronous=True)
+    
+    def wait_for_robot(robot_arm, target_config, threshold=0.1):
+        """Wait until robot reaches target configuration."""
+        while True:
+            current = robot_arm.getActualQ()
+            dist = np.linalg.norm(np.array(current) - np.array(target_config))
+            if dist < threshold:
+                break
+            time.sleep(0.01)
+    
+    def execute_parallel_motion(right_path, left_path):
+        """Execute both robot paths SIMULTANEOUSLY using threads."""
+        print(">>> PARALLEL EXECUTION: Both arms moving simultaneously!")
+        
+        right_target = right_path[-1]
+        left_target = left_path[-1]
+        
+        t_start = time.time()
+        
+        # Start both robots at the same time using threads
+        def start_right():
+            move_path_async(robot.robot_right, right_path)
+        
+        def start_left():
+            move_path_async(robot.robot_left, left_path)
+        
+        thread_right = threading.Thread(target=start_right)
+        thread_left = threading.Thread(target=start_left)
+        
+        thread_right.start()
+        thread_left.start()
+        
+        thread_right.join()
+        thread_left.join()
+        
+        # Wait for both robots to complete their motion (in parallel)
+        def wait_right():
+            wait_for_robot(robot.robot_right, right_target)
+        
+        def wait_left():
+            wait_for_robot(robot.robot_left, left_target)
+        
+        wait_thread_right = threading.Thread(target=wait_right)
+        wait_thread_left = threading.Thread(target=wait_left)
+        
+        wait_thread_right.start()
+        wait_thread_left.start()
+        
+        wait_thread_right.join()
+        wait_thread_left.join()
+        
+        t_end = time.time()
+        print(f"    Parallel execution completed in {t_end - t_start:.2f}s")
+
+    with open(json_path, 'r') as openfile:
+        steps = json.load(openfile)
+        for step in steps:
+            i = 0
+            while i < len(step["active_id"]):
+                description = step["description"][i]
+                
+                # Check for parallel motion marker
+                if (description.startswith("[PARALLEL-R]") and 
+                    i + 1 < len(step["active_id"]) and 
+                    step["description"][i + 1].startswith("[PARALLEL-L]")):
+                    
+                    print(f"\n>>> {description.replace('[PARALLEL-R] ', '')} (SIMULTANEOUS)")
+                    
+                    # Get both paths
+                    right_path = step["path"][i]
+                    left_path = step["path"][i + 1]
+                    
+                    # Handle grippers before motion
+                    robot.gripper_action(robot.robot_right, step["gripper_pre"][i])
+                    robot.gripper_action(robot.robot_left, step["gripper_pre"][i + 1])
+                    
+                    # Execute PARALLEL motion using threads!
+                    execute_parallel_motion(right_path, left_path)
+                    
+                    # Handle grippers after motion
+                    robot.gripper_action(robot.robot_right, step["gripper_post"][i])
+                    robot.gripper_action(robot.robot_left, step["gripper_post"][i + 1])
+                    
+                    i += 2  # Skip both parallel steps
+                    continue
+                
+                # Regular single-arm motion (sequential)
+                print(f"\n>>> {description}")
+                
+                arm_id = step["active_id"][i]
+                robot.set_active_robot(arm_id)
+                
+                # Gripper pre
+                robot.gripper_action(robot.active_robot, step["gripper_pre"][i])
+                
+                # Execute motion
+                if step["command"][i] == "move":
+                    robot.move_path(step["path"][i], False)
+                elif step["command"][i] == "movel":
+                    relative_pose = step["path"][i]
+                    robot.moveL_relative(relative_pose)
+                    time.sleep(1.0)
+                
+                # Gripper post
+                robot.gripper_action(robot.active_robot, step["gripper_post"][i])
+                
+                i += 1
+    
+    print("\n" + "="*60)
+    print("EXPERIMENT COMPLETE WITH PARALLEL EXECUTION")
+    print("="*60)
+    robot.close_connection()
+
 def create_json():
     exp1 = Experiment()
     exp1.plan_experiment()
@@ -203,7 +339,13 @@ def IK_experiment():
 if __name__ == '__main__':
     # draw_two_robots()
     # connect_move_robots()
-    run_json("outputs/plan.json")
+    
+    # Regular sequential execution (original):
+    # run_json("outputs/plan.json")
+    
+    # PARALLEL execution (new - uses threads for simultaneous motion):
+    run_json_parallel("outputs/plan_dual.json")
+    
     #create_json()
     # animation("plan_fixed.json")
     # IK()
