@@ -160,7 +160,7 @@ class Experiment:
         right_arm = env.arm_base_location[LocationType.RIGHT]
         tool_len = inverse_kinematics.tool_length
 
-        LIFT_HEIGHT = 0.4  # TODO: find correct Z value using simulations
+        LIFT_HEIGHT = 0.2  # TODO: find correct Z value using simulations
         pickup_coords = (np.array(cube_coords) + np.array([0, 0, LIFT_HEIGHT])).tolist()
 
         # RPY for pickup: Account for right arm base rotation of -90° around Z
@@ -266,7 +266,7 @@ class Experiment:
         # Add lift height for approach (same as pickup)
         PLACEMENT_LIFT_HEIGHT = 0.2
         # RPY for placement: Account for left arm base rotation of +90° around Z
-        placement_rpy = [0, -np.pi/2, np.pi/2]  # Adjusted for base rotation # TODO Find correct orientation using simulations
+        placement_rpy = [0, np.pi, 0]  # Adjusted for base rotation # TODO Find correct orientation using simulations
         
         bb_placement = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
                                        ur_params=ur_params_left, transform=left_arm_transform)
