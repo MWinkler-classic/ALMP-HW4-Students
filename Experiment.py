@@ -160,7 +160,7 @@ class Experiment:
         right_arm = env.arm_base_location[LocationType.RIGHT]
         tool_len = inverse_kinematics.tool_length
 
-        LIFT_HEIGHT = 0.2
+        LIFT_HEIGHT = 0.1
         pickup_coords = (np.array(cube_coords) + np.array([0, 0, LIFT_HEIGHT])).tolist()
 
         # RPY for pickup: Account for right arm base rotation of -90° around Z
@@ -181,27 +181,29 @@ class Experiment:
         ###############################################################################
 
         # After moving to cube_approach, the gripper goes down and closes
-        # Calculate where the cube will be after picking up (at gripper position after going down)
-        # The movel command moves down 0.14, so cube will be at that new position
-        cube_after_pickup_pos = self.get_end_effector_position(cube_conf, right_arm_transform)
-        cube_after_pickup_pos[2] -= 0.14  # Account for the down movement
-        cubes_after_pickup = self.update_cube_position(cubes, cube_i, cube_after_pickup_pos)
+        CUBE_PICKUP_CONST = -0.07
         
         self.push_step_info_into_single_cube_passing_data("picking up a cube: go down",
                                                           LocationType.RIGHT,
                                                           "movel",
                                                           list(self.left_arm_home),
-                                                          [0, 0, -0.14],
-                                                          cubes_after_pickup,  # Cube is now at gripper position
+                                                          [0, 0, CUBE_PICKUP_CONST],
+                                                          [],
                                                           Gripper.STAY,  # gripper_pre: already open, stay open
                                                           Gripper.CLOSE)  # gripper_post: close after reaching cube
+
+        # Calculate where the cube will be after picking up (at gripper position after going down)
+        # The movel command moves down 0.14, so cube will be at that new position
+        cube_after_pickup_pos = self.get_end_effector_position(cube_conf, right_arm_transform)
+        cube_after_pickup_pos[2] += CUBE_PICKUP_CONST  # Account for the down movement
+        cubes_after_pickup = self.update_cube_position(cubes, cube_i, cube_after_pickup_pos)
         
         # Lift back up to avoid collision
         self.push_step_info_into_single_cube_passing_data("picking up a cube: lift back up",
                                                           LocationType.RIGHT,
                                                           "movel",
                                                           list(self.left_arm_home),
-                                                          [0, 0, 0.14],
+                                                          [0, 0, CUBE_PICKUP_CONST],
                                                           cubes_after_pickup,  # Cube moves up with gripper
                                                           Gripper.STAY,  # gripper_pre: stay closed
                                                           Gripper.STAY)  # gripper_post: stay closed
@@ -360,14 +362,14 @@ class Experiment:
         cube_final_pos[2] -= 0.14  # Cube goes down with gripper
         cubes_final = self.update_cube_position(cubes, cube_i, cube_final_pos)
 
-        # self.push_step_info_into_single_cube_passing_data("placing down cube: go down and open gripper",
-        #                                                   LocationType.LEFT,
-        #                                                   "movel",
-        #                                                   list(right_meeting_point_conf),
-        #                                                   [0, 0, -0.14],
-        #                                                   cubes_final,  # Cube at final position
-        #                                                   Gripper.STAY,  # gripper_pre: stay closed
-        #                                                   Gripper.OPEN)   # gripper_post: open to release cube
+        self.push_step_info_into_single_cube_passing_data("placing down cube: go down and open gripper",
+                                                          LocationType.LEFT,
+                                                          "movel",
+                                                          list(right_meeting_point_conf),
+                                                          [0, 0, 0],
+                                                          cubes_final,  # Cube at final position
+                                                          Gripper.STAY,  # gripper_pre: stay closed
+                                                          Gripper.OPEN)   # gripper_post: open to release cube
 
         return left_arm_end_conf, right_meeting_point_conf # return left and right end position, so it can be the start position for the next interation.
 
@@ -406,14 +408,21 @@ class Experiment:
             print("cubes for the experiment: ", self.cubes)
 
         log(msg="calculate meeting point for the test.")
+
+
         # TODO 1
-        ###############################START#############################################
 
         left_arm = env.arm_base_location[LocationType.LEFT]
         right_arm = env.arm_base_location[LocationType.RIGHT]
         tool_len = inverse_kinematics.tool_length
+
+        # TODO 1 PARAMS
         right_x_bias = 0.5
         right_y_bias = 0.6
+
+        left_meeting_rpy = [np.pi / 2, 0, np.pi * 1 / 2]  # TODO Validate via simulation
+        right_meeting_rpy = [np.pi / 2, np.pi / 2, -np.pi / 2]
+
 
         print("left arm start = ", left_arm, " right arm start = ", right_arm)
 
@@ -425,20 +434,11 @@ class Experiment:
 
         print(f"DEBUG: Meeting point coords - base: {base_meeting_coords}, left: {left_meeting_coords}, right: {right_meeting_coords}")
 
-        left_meeting_rpy = [np.pi/2, 0, np.pi*1/2]  # TODO Validate via simulation
-        right_meeting_rpy = [np.pi/2, np.pi/2, -np.pi/2]
-
         transformation_matrix_base_to_tool_l = transform_left_arm.get_base_to_tool_transform(position=left_meeting_coords,
                                                                                             rpy=left_meeting_rpy)
         transformation_matrix_base_to_tool_r = transform_right_arm.get_base_to_tool_transform(position=right_meeting_coords,
                                                                                             rpy=right_meeting_rpy)
 
-        # Select best valid IK solutions
-        print("Selecting best left arm meeting point configuration.")
-        print("transform to r: ", transformation_matrix_base_to_tool_r)
-        ik_r = inverse_kinematics.inverse_kinematic_solution(
-            inverse_kinematics.DH_matrix_UR5e,transformation_matrix_base_to_tool_r)
-        print("IK r: ", ik_r)
 
         bb_left = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
                                    ur_params=ur_params_left, transform=transform_left_arm)
@@ -452,14 +452,6 @@ class Experiment:
         self.right_arm_meeting_confs = bb_right.validate_IK_solutions(inverse_kinematics.inverse_kinematic_solution(
             inverse_kinematics.DH_matrix_UR5e, transformation_matrix_base_to_tool_r), transformation_matrix_base_to_tool_r)  # No start_conf = no edge checking(?)
 
-        print("right confs: ", self.right_arm_meeting_confs)
-
-
-        if len(self.left_arm_meeting_confs) == 0:
-            raise ValueError("No valid left arm meeting point configuration found!")
-        if len(self.right_arm_meeting_confs) == 0:
-            raise ValueError("No valid right arm meeting point configuration found!")
-
         print("left conf for meeting points: ", self.left_arm_meeting_confs)
         print("right conf for meeting points: ", self.right_arm_meeting_confs)
 
@@ -471,7 +463,7 @@ class Experiment:
                                            conf_right=conf)
             return [self.left_arm_meeting_confs, self.right_arm_meeting_confs]
 
-        #################################END#############################################
+        #################################END TODO 1#############################################
 
 
         log(msg="start planning the experiment.")
