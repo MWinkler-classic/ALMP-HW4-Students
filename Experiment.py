@@ -181,7 +181,7 @@ class Experiment:
         ###############################################################################
 
         # After moving to cube_approach, the gripper goes down and closes
-        CUBE_PICKUP_CONST = -0.07
+        CUBE_PICKUP_CONST = -0.10
         
         self.push_step_info_into_single_cube_passing_data("picking up a cube: go down",
                                                           LocationType.RIGHT,
@@ -203,7 +203,7 @@ class Experiment:
                                                           LocationType.RIGHT,
                                                           "movel",
                                                           list(self.left_arm_home),
-                                                          [0, 0, CUBE_PICKUP_CONST],
+                                                          [0, 0, -CUBE_PICKUP_CONST],
                                                           cubes_after_pickup,  # Cube moves up with gripper
                                                           Gripper.STAY,  # gripper_pre: stay closed
                                                           Gripper.STAY)  # gripper_post: stay closed
