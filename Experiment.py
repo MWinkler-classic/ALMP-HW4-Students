@@ -160,19 +160,17 @@ class Experiment:
         right_arm = env.arm_base_location[LocationType.RIGHT]
         tool_len = inverse_kinematics.tool_length
 
-        LIFT_HEIGHT = 0.2  # TODO: find correct Z value using simulations
+        LIFT_HEIGHT = 0.2
         pickup_coords = (np.array(cube_coords) + np.array([0, 0, LIFT_HEIGHT])).tolist()
 
         # RPY for pickup: Account for right arm base rotation of -90° around Z
         # [roll, pitch, yaw] where yaw compensates for base rotation
-        # TODO: return to [0, -np.pi/2, -np.pi/2] and debug why couldnt find confs for that
         pickup_rpy = [0, np.pi, np.pi] # [0, -np.pi/2, -np.pi/2]  # Adjusted for base rotation # TODO: find correct orientation using simulations
 
         transformation_matrix_base_to_tool = right_arm_transform.get_base_to_tool_transform(
             position=pickup_coords,
             rpy=pickup_rpy)
 
-        # TODO: passing correct ur params????
         cube_approaches = bb.validate_IK_solutions(inverse_kinematics.inverse_kinematic_solution(
             inverse_kinematics.DH_matrix_UR5e, transformation_matrix_base_to_tool),transformation_matrix_base_to_tool)
 
@@ -217,13 +215,11 @@ class Experiment:
         # move right arm to meeting point (cube is now attached to right gripper)
         cubes_for_collision = [c for j, c in enumerate(cubes_after_pickup) if j != cube_i]
         description = "right_arm => [cube pickup -> meeting point], left_arm static"
-        # TODO: start conf correct? cube conf or maybe it is updated after the movel they provided?
         right_meeting_point_conf = self.plan_single_arm(planner, cube_conf, self.right_arm_meeting_confs, description,
                                                         active_arm, "move", left_arm_start, cubes_for_collision,
                                                         Gripper.STAY, Gripper.STAY,
                                                         env, ur_params_right, right_arm_transform)  # gripper_pre: stay closed, gripper_post: stay closed (holding cube)
 
-        # TODO: moved these lines from before to after the planning step. maybe wrong.
         # Cube moves with right gripper to meeting point
         cube_at_meeting_pos = self.get_end_effector_position(right_meeting_point_conf, right_arm_transform)
         cubes_at_meeting = self.update_cube_position(cubes, cube_i, cube_at_meeting_pos)
@@ -283,6 +279,8 @@ class Experiment:
         # Left arm is at approximately [0.712, 1.516, 0] based on debug output
         # Zone B Y range is [1.588, 1.988], so we want Y closer to 1.588 (bottom of Zone B)
         candidate_positions = [
+            # Center
+            [zone_b_offset[0] + zone_b_size * 0.5, zone_b_offset[1] + zone_b_size * 0.5, cube_side / 2.0],
             # Bottom-right of Zone B (closest to left arm)
             [zone_b_offset[0] + zone_b_size * 0.75, zone_b_offset[1] + zone_b_size * 0.1, cube_side / 2.0],
             # Bottom-center
@@ -291,14 +289,12 @@ class Experiment:
             [zone_b_offset[0] + zone_b_size * 0.75, zone_b_offset[1] + zone_b_size * 0.3, cube_side / 2.0],
             # Middle-center
             [zone_b_offset[0] + zone_b_size * 0.5, zone_b_offset[1] + zone_b_size * 0.3, cube_side / 2.0],
-            # Center
-            [zone_b_offset[0] + zone_b_size * 0.5, zone_b_offset[1] + zone_b_size * 0.5, cube_side / 2.0],
         ]
         
         # Add lift height for approach (same as pickup)
         PLACEMENT_LIFT_HEIGHT = 0.2
         # RPY for placement: Account for left arm base rotation of +90° around Z
-        placement_rpy = [0, np.pi, 0]  # Adjusted for base rotation # TODO Find correct orientation using simulations
+        placement_rpy = [0, np.pi, 0]
         
         bb_placement = BuildingBlocks3D(env=env, resolution=self.resolution, p_bias=self.goal_bias,
                                        ur_params=ur_params_left, transform=left_arm_transform)
@@ -364,14 +360,14 @@ class Experiment:
         cube_final_pos[2] -= 0.14  # Cube goes down with gripper
         cubes_final = self.update_cube_position(cubes, cube_i, cube_final_pos)
 
-        self.push_step_info_into_single_cube_passing_data("placing down cube: go down and open gripper",
-                                                          LocationType.LEFT,
-                                                          "movel",
-                                                          list(right_meeting_point_conf),
-                                                          [0, 0, -0.14],
-                                                          cubes_final,  # Cube at final position
-                                                          Gripper.STAY,  # gripper_pre: stay closed
-                                                          Gripper.OPEN)   # gripper_post: open to release cube
+        # self.push_step_info_into_single_cube_passing_data("placing down cube: go down and open gripper",
+        #                                                   LocationType.LEFT,
+        #                                                   "movel",
+        #                                                   list(right_meeting_point_conf),
+        #                                                   [0, 0, -0.14],
+        #                                                   cubes_final,  # Cube at final position
+        #                                                   Gripper.STAY,  # gripper_pre: stay closed
+        #                                                   Gripper.OPEN)   # gripper_post: open to release cube
 
         return left_arm_end_conf, right_meeting_point_conf # return left and right end position, so it can be the start position for the next interation.
 
@@ -424,13 +420,13 @@ class Experiment:
         base_meeting_coords = [((1-right_x_bias)*left_arm[0] + right_x_bias*right_arm[0]),
                                ((1-right_y_bias)*left_arm[1] + right_y_bias*right_arm[1]),
                                0.5]  # Increased Z from 0.35 to 0.5 to avoid collisions
-        left_meeting_coords = (np.array(base_meeting_coords) + np.array([-tool_len/2, tool_len/2, 0])).tolist() #check y should be 0 ?
-        right_meeting_coords = (np.array(base_meeting_coords) + np.array([tool_len/2, -tool_len/2, 0])).tolist()
+        left_meeting_coords = (np.array(base_meeting_coords) + np.array([-tool_len/2, 0, 0])).tolist() #check y should be 0 ?
+        right_meeting_coords = (np.array(base_meeting_coords) + np.array([tool_len/2, 0, 0])).tolist()
 
         print(f"DEBUG: Meeting point coords - base: {base_meeting_coords}, left: {left_meeting_coords}, right: {right_meeting_coords}")
 
-        left_meeting_rpy = [np.pi/2, 0, np.pi*1/4]  # TODO Validate via simulation
-        right_meeting_rpy = [np.pi/2, np.pi, -np.pi*3/4]
+        left_meeting_rpy = [np.pi/2, 0, np.pi*1/2]  # TODO Validate via simulation
+        right_meeting_rpy = [np.pi/2, np.pi/2, -np.pi/2]
 
         transformation_matrix_base_to_tool_l = transform_left_arm.get_base_to_tool_transform(position=left_meeting_coords,
                                                                                             rpy=left_meeting_rpy)
