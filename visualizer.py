@@ -261,6 +261,67 @@ class Visualize_UR(object):
             # self.draw_obstacles()
             self.show()
             plt.show()
+
+    def show_stage_moving_both_arms(self, right_path, left_path, cubes, msg="", sleep_time=0.02):
+        '''
+        Plots both arms moving simultaneously
+        '''
+        # Ensure paths are numpy arrays
+        right_path = [np.array(p) for p in right_path]
+        left_path = [np.array(p) for p in left_path]
+        
+        # Get the longer path length
+        max_len = max(len(right_path), len(left_path))
+        
+        # Pad shorter path by repeating last config
+        while len(right_path) < max_len:
+            right_path.append(right_path[-1])
+        while len(left_path) < max_len:
+            left_path.append(left_path[-1])
+        
+        confs_num = max_len - 1
+        resolution = 5 * np.pi / 180
+        
+        for i in range(confs_num):
+            # Interpolate both paths
+            max_diff_right = np.max(np.abs(right_path[i + 1] - right_path[i]))
+            max_diff_left = np.max(np.abs(left_path[i + 1] - left_path[i]))
+            max_diff = max(max_diff_right, max_diff_left)
+            nums = max(int(max_diff / resolution), 2)
+            
+            if i + 1 == confs_num:
+                right_confs = np.linspace(start=right_path[i], stop=right_path[i + 1], num=nums, endpoint=True)
+                left_confs = np.linspace(start=left_path[i], stop=left_path[i + 1], num=nums, endpoint=True)
+            else:
+                right_confs = np.linspace(start=right_path[i], stop=right_path[i + 1], num=nums, endpoint=False)
+                left_confs = np.linspace(start=left_path[i], stop=left_path[i + 1], num=nums, endpoint=False)
+            
+            for j in range(len(right_confs)):
+                conf_right = right_confs[j]
+                conf_left = left_confs[j]
+                
+                global_sphere_coords_right = self.transform_right_arm.conf2sphere_coords(conf_right)
+                global_sphere_coords_left = self.transform_left_arm.conf2sphere_coords(conf_left)
+                
+                self.ax.view_init(elev=15, azim=250)
+                self.draw_spheres(global_sphere_coords_right)
+                self.draw_spheres(global_sphere_coords_left)
+                self.draw_square()
+                self.ax.set_title(msg)
+                self.ax.text(self.env.arm_base_location[LocationType.RIGHT][0]+0.1,
+                             self.env.arm_base_location[LocationType.RIGHT][1]+0.1, 0,
+                             "Right", (0, 0, 0), color='blue', 
+                             bbox=dict(facecolor='white', edgecolor='blue', pad=1.0), zorder=10)
+                self.ax.text(self.env.arm_base_location[LocationType.LEFT][0]+0.1,
+                             self.env.arm_base_location[LocationType.LEFT][1]+0.1, 0,
+                             "Left", (0, 0, 0), color='blue', 
+                             bbox=dict(facecolor='white', edgecolor='blue', pad=1.0), zorder=10)
+                self.draw_cubes(cubes)
+                self.draw_obstacles()
+                self.show()
+                self.save_plot()
+                time.sleep(sleep_time)
+                self.ax.axes.clear()
     
     def show_all_experiment(self, experiment_json):
         # Opening JSON file
@@ -269,9 +330,24 @@ class Visualize_UR(object):
             steps = json.load(openfile)
             for step in steps:
                 # iterate over the step dicts
-                for i in range(len(step["active_id"])):
-                    # display the movement
+                i = 0
+                while i < len(step["active_id"]):
+                    # Check for parallel motion (two consecutive steps marked with [PARALLEL-R] and [PARALLEL-L])
+                    if (step["description"][i].startswith("[PARALLEL-R]") and 
+                        i + 1 < len(step["active_id"]) and 
+                        step["description"][i + 1].startswith("[PARALLEL-L]")):
+                        # This is a parallel motion - visualize both arms moving together
+                        right_path = [np.array(path_conf) for path_conf in step["path"][i]]
+                        left_path = [np.array(path_conf) for path_conf in step["path"][i + 1]]
+                        cubes = step["cubes"][i]
+                        msg = step["description"][i].replace("[PARALLEL-R] ", "") + " (SIMULTANEOUS)"
+                        self.show_stage_moving_both_arms(right_path, left_path, cubes, msg)
+                        i += 2  # Skip both parallel steps
+                        continue
+                    
+                    # Regular single-arm motion
                     if step["command"][i] == "movel":
+                        i += 1
                         continue
                     path = [np.array(path_conf) for path_conf in step["path"][i]]
                     if step["description"][i] == "passing the cube.":
@@ -280,3 +356,4 @@ class Visualize_UR(object):
                     else:
                         self.show_stage_moving_single_arm(step["active_id"][i], path, np.array(step["static"][i]), step["cubes"][i],
                                                             step["description"][i])
+                    i += 1
