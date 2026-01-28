@@ -105,8 +105,10 @@ def run_json(json_path, output_file=None):
                         # super(robot_interface.RobotInterfaceWithGripper, robot.active_robot).getInverseKinematics()
                     elif step["command"][i] == "movel":
                         relative_pose = step["path"][i]
+                        time.sleep(1.0)
                         robot.moveL_relative(relative_pose)
                     # lastly, check gripper post status
+
                     robot.gripper_action(robot.active_robot, step["gripper_post"][i])
 
     end_time = time.time()
@@ -265,8 +267,9 @@ def run_json_parallel(json_path, output_file=None):
                     robot.move_path(step["path"][i], False)
                 elif step["command"][i] == "movel":
                     relative_pose = step["path"][i]
-                    robot.moveL_relative(relative_pose)
                     time.sleep(1.0)
+                    robot.moveL_relative(relative_pose)
+                    
 
                 # Gripper post
                 robot.gripper_action(robot.active_robot, step["gripper_post"][i])
@@ -399,7 +402,7 @@ if __name__ == '__main__':
     # connect_move_robots()
 
     # Regular sequential execution (original):
-    # run_json("outputs/plan.json", "outputs/regular_plan_output.txt")
+    #run_json("outputs/plan.json", "outputs/regular_plan_output.txt")
 
     # PARALLEL execution (new - uses threads for simultaneous motion):
     run_json_parallel("outputs/plan_dual.json", "outputs/parallel_plan_output.txt")

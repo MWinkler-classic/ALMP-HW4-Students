@@ -127,7 +127,7 @@ class BaseRobot:
     def move_path(self, path, asynchronous = False):
         speed = 0.5
         acceleration = 0.5
-        blend_radius = 0.05
+        blend_radius = 0.005
         path_with_params = [
             [*target_config, speed, acceleration, blend_radius] for target_config in path
         ]

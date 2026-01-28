@@ -1,0 +1,300 @@
+============================================================
+PARALLEL PLAN EXECUTION LOG
+============================================================
+Moving both arms to home position...
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.92s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 7.00s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+============================================================
+EXPERIMENT COMPLETE WITH PARALLEL EXECUTION
+Parallel plan run took 57.50 seconds
+============================================================
+
+============================================================
+PARALLEL PLAN EXECUTION LOG
+============================================================
+Moving both arms to home position...
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.89s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.93s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+============================================================
+EXPERIMENT COMPLETE WITH PARALLEL EXECUTION
+Parallel plan run took 59.60 seconds
+============================================================
+
+============================================================
+PARALLEL PLAN EXECUTION LOG
+============================================================
+Moving both arms to home position...
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.89s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.95s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+============================================================
+EXPERIMENT COMPLETE WITH PARALLEL EXECUTION
+Parallel plan run took 59.58 seconds
+============================================================
+
+============================================================
+PARALLEL PLAN EXECUTION LOG
+============================================================
+Moving both arms to home position...
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.93s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.99s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+============================================================
+EXPERIMENT COMPLETE WITH PARALLEL EXECUTION
+Parallel plan run took 59.66 seconds
+============================================================
+
+============================================================
+PARALLEL PLAN EXECUTION LOG
+============================================================
+Moving both arms to home position...
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.91s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.96s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+============================================================
+EXPERIMENT COMPLETE WITH PARALLEL EXECUTION
+Parallel plan run took 59.42 seconds
+============================================================
+
+============================================================
+PARALLEL PLAN EXECUTION LOG
+============================================================
+Moving both arms to home position...
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.89s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+>>> PARALLEL: Right->cube, Left->meeting (SIMULTANEOUS)
+>>> PARALLEL EXECUTION: Both arms moving simultaneously!
+    Parallel execution completed in 6.95s
+
+>>> Right: pickup cube (go down)
+
+>>> Right: lift cube
+
+>>> Right->meeting (left already there)
+
+>>> Transfer: left grabs cube
+
+>>> Transfer: right releases
+
+>>> Transfer: left back up
+
+>>> Left->ZoneB (right stays at meeting)
+
+>>> Left: place cube down
+
+============================================================
+EXPERIMENT COMPLETE WITH PARALLEL EXECUTION
+Parallel plan run took 69.85 seconds
+============================================================
+

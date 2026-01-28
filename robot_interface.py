@@ -58,7 +58,7 @@ class RobotInterfaceWithGripper(RobotInterface):
     def grasp(self, wait_time=0.5):
         min_width = self.gripper.twofg_get_min_external_width()
         logging.debug(f"Grasping ({self.robot_ip}), min_width: {min_width}")
-        res = self.gripper.twofg_grip_external(min_width, 20, 100)
+        res = self.gripper.twofg_grip_external(min_width, 50, 100)
         if res != 0:
             logging.warning(f"Failed to grasp ({self.robot_ip})")
         time.sleep(wait_time)
@@ -66,7 +66,7 @@ class RobotInterfaceWithGripper(RobotInterface):
     def release_grasp(self, wait_time=0.5):
         max_width = self.gripper.twofg_get_max_external_width()
         logging.debug(f"Releasing grasp ({self.robot_ip}), max_width: {max_width}")
-        res = self.gripper.twofg_grip_external(max_width, 20, 100)
+        res = self.gripper.twofg_grip_external(max_width, 50, 100)
         if res != 0:
             logging.warning(f"Failed to release grasp ({self.robot_ip})")
         time.sleep(wait_time)

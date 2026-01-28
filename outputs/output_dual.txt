@@ -1,0 +1,69 @@
+STEP: Calculate meeting points
+STEP: Start dual-arm planning with parallel execution
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: Calculate meeting points
+STEP: Start dual-arm planning with parallel execution
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: Calculate meeting points
+STEP: Start dual-arm planning with parallel execution
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: Calculate meeting points
+STEP: Start dual-arm planning with parallel execution
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: Calculate meeting points
+STEP: Start dual-arm planning with parallel execution
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: Calculate meeting points
+STEP: Start dual-arm planning with parallel execution
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: Calculate meeting points
+STEP: Start dual-arm planning with parallel execution
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: Calculate meeting points
+STEP: Start dual-arm planning with parallel execution
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: Calculate meeting points
+STEP: Start dual-arm planning with parallel execution
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)
+STEP: PARALLEL: Right->cube, Left->meeting
+STEP: Right->meeting (left already there)
+STEP: Left->ZoneB (right stays at meeting)

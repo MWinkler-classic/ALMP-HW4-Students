@@ -108,7 +108,7 @@ class DualArmExperiment:
             bb_right.transform = transform_right
             bb_right.ur_params = ur_params_right
             
-            planner_right = RRT_STAR(max_step_size=self.max_step_size, max_itr=self.max_itr, bb=bb_right)
+            planner_right = RRT_STAR(max_step_size=self.max_step_size, max_itr=self.max_itr, bb=bb_right, stop_on_goal=True)
             right_path, _, right_goal = planner_right.find_path(start_conf=right_start, goal_confs=right_goals)
             
             if len(right_path) == 0:
@@ -122,7 +122,7 @@ class DualArmExperiment:
             bb_left.transform = transform_left
             bb_left.ur_params = ur_params_left
             
-            planner_left = RRT_STAR(max_step_size=self.max_step_size, max_itr=self.max_itr, bb=bb_left)
+            planner_left = RRT_STAR(max_step_size=self.max_step_size, max_itr=self.max_itr, bb=bb_left, stop_on_goal=True)
             left_path, _, left_goal = planner_left.find_path(start_conf=left_start, goal_confs=left_goals)
             
             if len(left_path) == 0:
@@ -352,7 +352,7 @@ class DualArmExperiment:
         bb_right.transform = transform_right
         bb_right.ur_params = ur_params_right
         
-        planner_right = RRT_STAR(max_step_size=self.max_step_size, max_itr=self.max_itr, bb=bb_right)
+        planner_right = RRT_STAR(max_step_size=self.max_step_size, max_itr=self.max_itr, bb=bb_right, stop_on_goal=True)
         path, _, right_at_meeting = planner_right.find_path(start_conf=cube_conf, goal_confs=self.right_arm_meeting_confs)
         
         self.push_step_info(description, LocationType.RIGHT, "move", list(left_at_meeting),
@@ -423,7 +423,7 @@ class DualArmExperiment:
         bb_left.transform = transform_left
         bb_left.ur_params = ur_params_left
         
-        planner_left = RRT_STAR(max_step_size=self.max_step_size, max_itr=self.max_itr, bb=bb_left)
+        planner_left = RRT_STAR(max_step_size=self.max_step_size, max_itr=self.max_itr, bb=bb_left, stop_on_goal=True)
         left_path, _, left_at_placement = planner_left.find_path(start_conf=left_at_meeting, goal_confs=valid_placement_confs)
         
         self.push_step_info(description, LocationType.LEFT, "move", list(right_at_meeting),
@@ -488,8 +488,8 @@ class DualArmExperiment:
         right_x_bias = 0.5
         right_y_bias = 0.6
         
-        left_meeting_rpy = [np.pi / 2, 0, np.pi * 1 / 2]
-        right_meeting_rpy = [np.pi / 2, np.pi / 2, -np.pi / 2]
+        left_meeting_rpy = [np.pi / 2, np.pi / 2, np.pi * 1 / 2]  # TODO Validate via simulation
+        right_meeting_rpy = [np.pi / 2, 0, -np.pi / 2]
         
         base_meeting_coords = [
             ((1 - right_x_bias) * left_arm[0] + right_x_bias * right_arm[0]),
@@ -556,8 +556,8 @@ class DualArmExperiment:
         
         print(f"Results saved to {dir_path}plan_dual.json")
         
-        visualizer.show_all_experiment(dir_path + "plan_dual.json")
-        visualizer.animate_by_pngs()
+        # visualizer.show_all_experiment(dir_path + "plan_dual.json")
+        # visualizer.animate_by_pngs()
 
     def get_cubes_for_experiment(self, experiment_id, env):
         """Generate cube positions (same as Experiment.py)."""
