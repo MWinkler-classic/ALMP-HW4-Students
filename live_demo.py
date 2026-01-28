@@ -70,7 +70,7 @@ def connect_move_robots():
     # https://sdurobotics.gitlab.io/ur_rtde/api/api.html#_CPPv4N7ur_rtde20RTDEControlInterface5moveJERKNSt6vectorINSt6vectorIdEEEEb
     robot.close_connection()
 
-def run_json(json_path):
+def run_json(json_path, output_file=None):
     # left_arm_ip = "192.168.0.17"  # TODO
     # right_arm_ip = "192.168.0.10"  # TODO
     robot = BaseRobot(left_arm_ip, right_arm_ip)
@@ -80,6 +80,7 @@ def run_json(json_path):
     time.sleep(2)
 
     start_time = time.time()
+    log_messages = []
 
     with open(json_path, 'r') as openfile:
             # Reading from json file
@@ -87,7 +88,9 @@ def run_json(json_path):
             for step in steps:
                 # iterate over the step elements
                 for i in range(len(step["active_id"])):
-                    print(step["description"][i])
+                    msg = step["description"][i]
+                    print(msg)
+                    log_messages.append(msg)
                     # which arm are we moving?
                     arm_id = step["active_id"][i]
                     robot.set_active_robot(arm_id)
@@ -107,23 +110,43 @@ def run_json(json_path):
                     robot.gripper_action(robot.active_robot, step["gripper_post"][i])
 
     end_time = time.time()
-    print("run took ", end_time-start_time, " seconds")
+    execution_time = end_time - start_time
+    result_msg = f"Regular plan run took {execution_time:.2f} seconds"
+    print(result_msg)
+    log_messages.append(result_msg)
 
     robot.close_connection()
+    
+    # Write to output file if specified
+    if output_file:
+        with open(output_file, 'a') as f:
+            f.write("="*60 + "\n")
+            f.write("REGULAR PLAN EXECUTION LOG\n")
+            f.write("="*60 + "\n")
+            for msg in log_messages:
+                f.write(msg + "\n")
+            f.write("\n")
+    
+    return execution_time
 
 
-def run_json_parallel(json_path):
+def run_json_parallel(json_path, output_file=None):
     """
     Run experiment with PARALLEL execution for steps marked with [PARALLEL-R] and [PARALLEL-L].
     Both arms move SIMULTANEOUSLY using threads for those steps.
     """
     robot = BaseRobot(left_arm_ip, right_arm_ip)
     home_config = [0, -pi / 2, 0, -pi / 2, 0, 0]
+    log_messages = []
 
-    print("Moving both arms to home position...")
+    msg = "Moving both arms to home position..."
+    print(msg)
+    log_messages.append(msg)
     robot.robot_left.move_home()
     robot.robot_right.move_home()
     time.sleep(2)
+    
+    start_time = time.time()
 
     def move_path_async(robot_arm, path):
         """Move robot along path asynchronously (non-blocking)."""
@@ -145,7 +168,10 @@ def run_json_parallel(json_path):
 
     def execute_parallel_motion(right_path, left_path):
         """Execute both robot paths SIMULTANEOUSLY using threads."""
-        print(">>> PARALLEL EXECUTION: Both arms moving simultaneously!")
+        nonlocal log_messages
+        msg = ">>> PARALLEL EXECUTION: Both arms moving simultaneously!"
+        print(msg)
+        log_messages.append(msg)
 
         right_target = right_path[-1]
         left_target = left_path[-1]
@@ -185,7 +211,9 @@ def run_json_parallel(json_path):
         wait_thread_left.join()
 
         t_end = time.time()
-        print(f"    Parallel execution completed in {t_end - t_start:.2f}s")
+        msg = f"    Parallel execution completed in {t_end - t_start:.2f}s"
+        print(msg)
+        log_messages.append(msg)
 
     with open(json_path, 'r') as openfile:
         steps = json.load(openfile)
@@ -199,7 +227,9 @@ def run_json_parallel(json_path):
                     i + 1 < len(step["active_id"]) and
                     step["description"][i + 1].startswith("[PARALLEL-L]")):
 
-                    print(f"\n>>> {description.replace('[PARALLEL-R] ', '')} (SIMULTANEOUS)")
+                    msg = f"\n>>> {description.replace('[PARALLEL-R] ', '')} (SIMULTANEOUS)"
+                    print(msg)
+                    log_messages.append(msg)
 
                     # Get both paths
                     right_path = step["path"][i]
@@ -220,7 +250,9 @@ def run_json_parallel(json_path):
                     continue
 
                 # Regular single-arm motion (sequential)
-                print(f"\n>>> {description}")
+                msg = f"\n>>> {description}"
+                print(msg)
+                log_messages.append(msg)
 
                 arm_id = step["active_id"][i]
                 robot.set_active_robot(arm_id)
@@ -241,10 +273,32 @@ def run_json_parallel(json_path):
 
                 i += 1
 
+    end_time = time.time()
+    execution_time = end_time - start_time
+    
     print("\n" + "="*60)
     print("EXPERIMENT COMPLETE WITH PARALLEL EXECUTION")
+    print(f"Parallel plan run took {execution_time:.2f} seconds")
     print("="*60)
+    
+    log_messages.append("\n" + "="*60)
+    log_messages.append("EXPERIMENT COMPLETE WITH PARALLEL EXECUTION")
+    log_messages.append(f"Parallel plan run took {execution_time:.2f} seconds")
+    log_messages.append("="*60)
+    
     robot.close_connection()
+    
+    # Write to output file if specified
+    if output_file:
+        with open(output_file, 'a') as f:
+            f.write("="*60 + "\n")
+            f.write("PARALLEL PLAN EXECUTION LOG\n")
+            f.write("="*60 + "\n")
+            for msg in log_messages:
+                f.write(msg + "\n")
+            f.write("\n")
+    
+    return execution_time
 
 def create_json():
     exp1 = Experiment()
@@ -345,10 +399,10 @@ if __name__ == '__main__':
     # connect_move_robots()
 
     # Regular sequential execution (original):
-    # run_json("outputs/plan.json")
+    # run_json("outputs/plan.json", "outputs/regular_plan_output.txt")
 
     # PARALLEL execution (new - uses threads for simultaneous motion):
-    run_json_parallel("outputs/plan_dual.json")
+    run_json_parallel("outputs/plan_dual.json", "outputs/parallel_plan_output.txt")
 
     #create_json()
     # animation("plan_fixed.json")
