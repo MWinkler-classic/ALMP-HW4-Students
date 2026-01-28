@@ -433,8 +433,8 @@ class Experiment:
         right_x_bias = 0.5
         right_y_bias = 0.6
 
-        left_meeting_rpy = [np.pi / 2, 0, np.pi * 1 / 2]  # TODO Validate via simulation
-        right_meeting_rpy = [np.pi / 2, np.pi / 2, -np.pi / 2]
+        left_meeting_rpy = [np.pi / 2, np.pi / 2, np.pi * 1 / 2]  # TODO Validate via simulation
+        right_meeting_rpy = [np.pi / 2, 0, -np.pi / 2]
 
 
         print("left arm start = ", left_arm, " right arm start = ", right_arm)
