@@ -380,11 +380,15 @@ class Experiment:
         # Update self.cubes with the final position of this cube in Zone B
         self.cubes[cube_i] = cube_final_pos
 
-        return left_arm_end_conf, right_meeting_point_conf # return left and right end position, so it can be the start position for the next interation.
+
+        config_time, edge_time = bb_placement.total_config_time, bb_placement.total_edge_time
+        return left_arm_end_conf, right_meeting_point_conf, config_time, edge_time # return left and right end position, so it can be the start position for the next interation.
 
 
     def plan_experiment(self, DEMO=False):
         start_time = time.time()
+        total_config_time = 0
+        total_edge_time = 0
 
         exp_id = 2
         ur_params_right = UR5e_PARAMS(inflation_factor=1.0)
@@ -479,11 +483,21 @@ class Experiment:
         left_arm_start = self.left_arm_home
         right_arm_start = self.right_arm_home
         for i in range(len(self.cubes)):
-            left_arm_start, right_arm_start = self.plan_single_cube_passing(i, self.cubes, left_arm_start, right_arm_start, env, bb_right, rrt_star_planner, transform_left_arm, transform_right_arm, ur_params_left, ur_params_right)
+            left_arm_start, right_arm_start, placement_config_time, placement_edge_time = self.plan_single_cube_passing(i, self.cubes, left_arm_start, right_arm_start, env, bb_right, rrt_star_planner, transform_left_arm, transform_right_arm, ur_params_left, ur_params_right)
+            total_config_time+= placement_config_time
+            total_edge_time+= placement_edge_time
 
 
         t2 = time.time()
         print(f"It took t={t2 - start_time} seconds")
+        bbs = [bb, bb_left, bb_right]
+        for b in bbs:
+            total_config_time += b.total_config_time
+            total_edge_time += b.total_edge_time
+
+        print("of that time, config time took: ", total_config_time)
+        print("of total config time, edge time took: ", total_edge_time)
+
         # save the experiment to data:
         # Serializing json
         json_object = json.dumps(self.experiment_result, indent=4)

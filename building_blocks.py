@@ -1,6 +1,7 @@
 import numpy as np
 import inverse_kinematics
 from kinematics import Transform, UR5e_PARAMS, UR5e_without_camera_PARAMS
+import time
 
 class BuildingBlocks3D(object):
     """
@@ -31,6 +32,9 @@ class BuildingBlocks3D(object):
             ["forearm_link", "wrist_3_link"],
         ]
 
+        self.total_config_time = 0
+        self.total_edge_time = 0
+
     def sample_random_config(self):
         pass
 
@@ -60,9 +64,8 @@ class BuildingBlocks3D(object):
         return False if in collision
         @param conf - some configuration
         """
-        # TODO: HW2 5.2.2- Pay attention that function is a little different than in HW2
-            # TODO: check for robot-robot collisiosn
-                # idea: check robot-robot collisions by creating a single sphere for each link, and check for sphere-sphere collisions.
+
+        start_time = time.time()
 
         # old code:
         sphere_coords = self.transform.conf2sphere_coords(conf)
@@ -87,6 +90,8 @@ class BuildingBlocks3D(object):
 
             if np.any(dists < r_sum):
                 # print("self-collision detected between " + link1 + " and " + link2)
+                end_time = time.time()
+                self.total_config_time += end_time-start_time
                 return False
 
         # ------------------------------------------------------------
@@ -103,6 +108,8 @@ class BuildingBlocks3D(object):
             if link != "shoulder_link":
                 if np.any(spheres[:, 2] < r_link):
                     # print("floor collision detected on link " + link)
+                    end_time = time.time()
+                    self.total_config_time += end_time - start_time
                     return False
 
             # obstacle collision
@@ -113,8 +120,12 @@ class BuildingBlocks3D(object):
                 )
                 if np.any(dists < (r_link + obs_r)):
                     # print("obstacle collision detected on link " + link)
+                    end_time = time.time()
+                    self.total_config_time += end_time - start_time
                     return False
 
+        end_time = time.time()
+        self.total_config_time += end_time - start_time
         return True
 
 
@@ -124,6 +135,9 @@ class BuildingBlocks3D(object):
         @param current_conf - current configuration
         '''
         # HW2 5.2.4
+
+        start_time = time.time()
+
         res = min(0.5, self.resolution)
         progress = 0
         # iters = 0
@@ -132,9 +146,13 @@ class BuildingBlocks3D(object):
             conf = prev_conf * (1.0 - progress) + current_conf * progress
             if not self.config_validity_checker(conf):
                 # print("iters = " +str(iters))
+                end_time = time.time()
+                self.total_edge_time += end_time - start_time
                 return False
             if progress == 1.0:
                 # print("iters = " + str(iters))
+                end_time = time.time()
+                self.total_edge_time += end_time - start_time
                 return True
             progress += res
             progress = min(progress, 1.0) # do one last iteration, for the final config.
