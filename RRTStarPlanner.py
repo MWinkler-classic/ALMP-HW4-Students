@@ -28,6 +28,7 @@ class RRTStarPlanner(RRTMotionPlanner):
         # RRT* specific params
         self.max_itr = max_itr
         self.stop_on_goal = stop_on_goal
+        print("stop on goal =", stop_on_goal)
         self.k = k
         self.max_step_size = max_step_size
         self.max_plan_time = max_plan_time
@@ -103,8 +104,14 @@ class RRTStarPlanner(RRTMotionPlanner):
         print(" start config (joint conf):", self.start)
         print("goal configs = ", goal_configs)
 
-        while (time.time() - start_time) < max_time_secs and (
-                not (self.max_itr is not None and iteration > self.max_itr)):
+        time_to_find_next = 50
+        last_seen_iter = 0
+        goal_not_found = True
+
+        while ((time.time() - start_time) < max_time_secs and (
+                not (self.max_itr is not None and iteration > self.max_itr))
+                and (goal_not_found or iteration < last_seen_iter + time_to_find_next)
+                and len(goal_configs) > 0):
             iteration += 1
             if iteration % 100 == 0:
                 print("RRT* iteration:", iteration, ", time elapsed (s):", round(time.time() - start_time, 2))
@@ -125,7 +132,8 @@ class RRTStarPlanner(RRTMotionPlanner):
                     goal_configs = [g for g in goal_configs if not np.array_equal(new_config, g)]
                     print("goal ids = " + str(goal_ids))
                     if self.stop_on_goal:
-                        break
+                        goal_not_found = False
+                        # break
 
                 # if self.visualizer is not None and iteration % 5 == 0:
                 #     self.visualizer.visualize_sampling(rand_config, near_config, new_config, self.tree, self.start, self.goal)

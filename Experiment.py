@@ -182,11 +182,12 @@ class Experiment:
         print("cube approach confs: ", cube_approaches)
         cube_conf = self.plan_single_arm(planner, right_arm_start, cube_approaches, description, active_arm, "move",
                                  left_arm_start, cubes, Gripper.OPEN, Gripper.STAY, env, ur_params_right, right_arm_transform)  # gripper_pre: open before path, gripper_post: stay open after path
+
         ###############################################################################
 
         # After moving to cube_approach, the gripper goes down and closes
-        CUBE_PICKUP_CONST = -0.10
-        
+        CUBE_PICKUP_CONST = -0.09
+
         self.push_step_info_into_single_cube_passing_data("picking up a cube: go down",
                                                           LocationType.RIGHT,
                                                           "movel",
@@ -407,7 +408,7 @@ class Experiment:
 
         rrt_star_planner = RRT_STAR(max_step_size=self.max_step_size,
                                     max_itr=self.max_itr,
-                                    bb=bb)
+                                    bb=bb, stop_on_goal=True)
         visualizer = Visualize_UR(ur_params_right, env=env, transform_right_arm=transform_right_arm,
                                   transform_left_arm=transform_left_arm)
         # cubes
