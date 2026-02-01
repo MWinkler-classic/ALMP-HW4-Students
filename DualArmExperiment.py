@@ -556,8 +556,8 @@ class DualArmExperiment:
         
         print(f"Results saved to {dir_path}plan_dual.json")
         
-        # visualizer.show_all_experiment(dir_path + "plan_dual.json")
-        # visualizer.animate_by_pngs()
+        visualizer.show_all_experiment(dir_path + "plan_dual.json")
+        visualizer.animate_by_pngs()
 
     def get_cubes_for_experiment(self, experiment_id, env):
         """Generate cube positions (same as Experiment.py)."""

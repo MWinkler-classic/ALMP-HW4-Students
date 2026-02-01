@@ -506,8 +506,8 @@ class Experiment:
         with open(dir_path + "plan.json", "w") as outfile:
             outfile.write(json_object)
         # show the experiment then export it to a GIF
-        # visualizer.show_all_experiment(dir_path + "plan.json")
-        # visualizer.animate_by_pngs()
+        visualizer.show_all_experiment(dir_path + "plan.json")
+        visualizer.animate_by_pngs()
 
     def get_cubes_for_experiment(self, experiment_id, env):
         """
